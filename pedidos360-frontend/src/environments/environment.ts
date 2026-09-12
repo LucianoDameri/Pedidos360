@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://v40douxdrf.execute-api.us-east-1.amazonaws.com',
+  apiUrl: 'http://34.229.246.93:8081',
   msalConfig: {
     auth: {
       clientId: 'f2e886fe-a3b6-46fe-affe-61b4ea743f2a',
@@ -10,6 +10,6 @@ export const environment = {
   },
   apiConfig: {
     scopes: ['openid', 'profile', 'email'],
-    uri: 'https://v40douxdrf.execute-api.us-east-1.amazonaws.com'
+    uri: 'http://34.229.246.93:8081'
   }
 };
