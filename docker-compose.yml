@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: pedidos360-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: pedidos360
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - pedidos360-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ms-clientes:
+    build: ./ms-clientes
+    container_name: ms-clientes
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/pedidos360_clientes?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      AZURE_TENANT_ID: 37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df
+      AZURE_CLIENT_ID: f2e886fe-a3b6-46fe-affe-61b4ea743f2a
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - pedidos360-net
+
+  ms-productos:
+    build: ./ms-productos
+    container_name: ms-productos
+    restart: always
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/pedidos360_productos?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      AZURE_TENANT_ID: 37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df
+      AZURE_CLIENT_ID: f2e886fe-a3b6-46fe-affe-61b4ea743f2a
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - pedidos360-net
+
+  ms-pedidos:
+    build: ./ms-pedidos
+    container_name: ms-pedidos
+    restart: always
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/pedidos360_pedidos?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      AZURE_TENANT_ID: 37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df
+      AZURE_CLIENT_ID: f2e886fe-a3b6-46fe-affe-61b4ea743f2a
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - pedidos360-net
+
+  ms-inventario:
+    build: ./ms-inventario
+    container_name: ms-inventario
+    restart: always
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/pedidos360_inventario?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      AZURE_TENANT_ID: 37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df
+      AZURE_CLIENT_ID: f2e886fe-a3b6-46fe-affe-61b4ea743f2a
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - pedidos360-net
+
+  ms-pagos:
+    build: ./ms-pagos
+    container_name: ms-pagos
+    restart: always
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/pedidos360_pagos?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      AZURE_TENANT_ID: 37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df
+      AZURE_CLIENT_ID: f2e886fe-a3b6-46fe-affe-61b4ea743f2a
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - pedidos360-net
+
+volumes:
+  mysql_data:
+
+networks:
+  pedidos360-net:
+    driver: bridge
