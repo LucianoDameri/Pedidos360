@@ -1,0 +1,25 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: ms-clientes
+  datasource:
+    url: jdbc:mysql://localhost:3306/pedidos360_clientes?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+azure:
+  activedirectory:
+    tenant-id: 37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df
+    client-id: f2e886fe-a3b6-46fe-affe-61b4ea743f2a
+    jwk-set-uri: https://login.microsoftonline.com/37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df/discovery/v2.0/keys
+    issuer-uri: https://login.microsoftonline.com/37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df/v2.0

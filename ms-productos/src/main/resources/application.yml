@@ -20,7 +20,7 @@ spring:
 # Configuración Azure AD (IDaaS)
 azure:
   activedirectory:
-    tenant-id: ${AZURE_TENANT_ID:your-tenant-id}
-    client-id: ${AZURE_CLIENT_ID:your-client-id}
-    jwk-set-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:your-tenant-id}/discovery/v2.0/keys
-    issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:your-tenant-id}/v2.0
+    tenant-id: ${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}
+    client-id: ${AZURE_CLIENT_ID:f2e886fe-a3b6-46fe-affe-61b4ea743f2a}
+    jwk-set-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}/discovery/v2.0/keys
+    issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}/v2.0
