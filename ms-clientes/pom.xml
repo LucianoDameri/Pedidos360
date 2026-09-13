@@ -40,6 +40,13 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- OAuth2 Resource Server: valida el JWT de Azure AD (firma, issuer,
+             audience, vigencia) contra las llaves públicas del IDaaS -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
         <!-- Validación -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

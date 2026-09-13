@@ -62,10 +62,23 @@ export function MSALGuardConfigFactory(): MsalGuardConfiguration {
   };
 }
 
-// Configuración del Interceptor (adjunta JWT a cada petición HTTP)
+// Configuración del Interceptor (adjunta el JWT como header Authorization
+// a cada petición HTTP cuyo dominio esté registrado en protectedResourceMap).
+//
+// OJO: antes esto solo registraba environment.apiConfig.uri (un único
+// microservicio). Cualquier petición a una URL que NO esté en el mapa
+// sale SIN Authorization y el backend responde 403. Por eso hay que
+// registrar aquí TODOS los backends que el frontend vaya a llamar
+// (los 5 microservicios y, más adelante, el API Gateway).
 export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
-  protectedResourceMap.set(environment.apiConfig.uri, environment.apiConfig.scopes);
+
+  Object.values(environment.services).forEach((url) => {
+    protectedResourceMap.set(url, environment.apiConfig.scopes);
+  });
+
+  // Se deja registrado desde ya para cuando se vuelva a apuntar al API Gateway.
+  protectedResourceMap.set(environment.apiGatewayUrl, environment.apiConfig.scopes);
 
   return {
     interactionType: InteractionType.Redirect,
