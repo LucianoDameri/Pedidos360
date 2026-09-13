@@ -20,6 +20,9 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,10 +33,9 @@ import java.util.List;
  * del JWT emitido por Azure AD usando las llaves públicas de jwk-set-uri.
  *
  * Reemplaza el filtro manual anterior (JwtAuthFilter), que parseaba el
- * token como JWT sin firmar (parseClaimsJwt + recorte manual de la firma)
- * y por lo tanto NO verificaba la firma en absoluto. Además su chequeo de
- * issuer exigía "https://login.microsoftonline.com/..." pero los tokens
- * v1.0 que emite Azure AD para esta app traen
+ * token como JWT sin firmar y por lo tanto NO verificaba la firma. Además
+ * su chequeo de issuer exigía "https://login.microsoftonline.com/..." pero
+ * los tokens v1.0 que emite Azure AD para esta app traen
  * "https://sts.windows.net/{tenantId}/", por lo que siempre fallaba.
  *
  * JwtAuthFilter.java queda sin uso: puedes borrarlo del proyecto.
@@ -54,6 +56,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -126,5 +129,20 @@ public class SecurityConfig {
             return authorities;
         });
         return converter;
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of(
+            "http://localhost:4200",
+            "https://v40douxdrf.execute-api.us-east-1.amazonaws.com"
+        ));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }
