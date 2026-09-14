@@ -12,31 +12,30 @@ export const environment = {
 
   // Scope de la API propia expuesto en Azure AD (App registrations > tu app >
   // "Expose an API" > Add a scope). DEBE coincidir EXACTO con el que crees ahí.
-  // Si tu App ID URI queda distinto (ej. api://pedidos360-api en vez de
-  // api://<clientId>), actualiza este valor.
   apiConfig: {
     scopes: ['api://f2e886fe-a3b6-46fe-affe-61b4ea743f2a/access_as_user']
   },
 
   // --- Backends ---
-  // Paso actual del plan: pegarle directo a la EC2 hasta confirmar que el
-  // token se adjunta y el backend responde 200. Cuando funcione, se cambia
-  // a apiGatewayUrl (ver README / instrucciones del profe).
+  // Paso 3 del plan ya aplicado: se pasó de la EC2 directa al API Gateway.
+  // Si algún día hay que volver a probar directo contra la EC2 (saltándose
+  // el Gateway), ec2Host queda como referencia.
   ec2Host: 'http://34.227.91.156',
   apiGatewayUrl: 'https://v40douxdrf.execute-api.us-east-1.amazonaws.com',
 
-  // Un entry por microservicio: MsalInterceptor necesita la URL EXACTA
-  // (con puerto) registrada en protectedResourceMap (app.config.ts) para
-  // adjuntar el Bearer token a cada uno.
+  // Las rutas de los 5 microservicios en el API Gateway comparten el mismo
+  // dominio (se diferencian por el path: /clientes, /productos, etc., que
+  // cada servicio Angular agrega por su cuenta) — por eso las 5 entradas
+  // apuntan al mismo valor. protectedResourceMap (app.config.ts) solo
+  // necesita este dominio registrado para adjuntar el Bearer token.
   services: {
-    clientes: 'http://34.227.91.156:8081',
-    productos: 'http://34.227.91.156:8082',
-    pedidos: 'http://34.227.91.156:8083',
-    inventario: 'http://34.227.91.156:8084',
-    pagos: 'http://34.227.91.156:8085'
+    clientes: 'https://v40douxdrf.execute-api.us-east-1.amazonaws.com',
+    productos: 'https://v40douxdrf.execute-api.us-east-1.amazonaws.com',
+    pedidos: 'https://v40douxdrf.execute-api.us-east-1.amazonaws.com',
+    inventario: 'https://v40douxdrf.execute-api.us-east-1.amazonaws.com',
+    pagos: 'https://v40douxdrf.execute-api.us-east-1.amazonaws.com'
   },
 
-  // Usado hoy por ClienteService. Se mantiene por compatibilidad con el
-  // código ya escrito.
-  apiUrl: 'http://34.227.91.156:8081'
+  // Usado hoy por ClienteService (arma la URL como `${apiUrl}/clientes`).
+  apiUrl: 'https://v40douxdrf.execute-api.us-east-1.amazonaws.com'
 };
