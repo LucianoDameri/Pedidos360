@@ -23,3 +23,7 @@ azure:
     client-id: ${AZURE_CLIENT_ID:f2e886fe-a3b6-46fe-affe-61b4ea743f2a}
     jwk-set-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}/discovery/v2.0/keys
     issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}/v2.0
+
+# URL de ms-pedidos (en docker-compose: nombre de contenedor)
+servicios:
+  pedidos-url: ${PEDIDOS_URL:http://localhost:8083}

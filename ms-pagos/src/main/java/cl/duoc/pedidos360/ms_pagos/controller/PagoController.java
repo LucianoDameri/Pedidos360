@@ -4,6 +4,7 @@ import cl.duoc.pedidos360.ms_pagos.model.Pago;
 import cl.duoc.pedidos360.ms_pagos.service.PagoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,8 +39,9 @@ public class PagoController {
     }
 
     @PostMapping
-    public ResponseEntity<Pago> procesar(@Valid @RequestBody Pago pago) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.procesar(pago));
+    public ResponseEntity<Pago> procesar(@Valid @RequestBody Pago pago,
+                                         @RequestHeader(HttpHeaders.AUTHORIZATION) String auth) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.procesar(pago, auth));
     }
 
     @PatchMapping("/{id}/estado")

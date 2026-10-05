@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ms-bff
+
+# Configuración Azure AD (IDaaS) - misma app registration que los microservicios
+azure:
+  activedirectory:
+    tenant-id: ${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}
+    client-id: ${AZURE_CLIENT_ID:f2e886fe-a3b6-46fe-affe-61b4ea743f2a}
+    jwk-set-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}/discovery/v2.0/keys
+
+# URLs internas de los microservicios (en docker-compose se usan los nombres de contenedor)
+bff:
+  cors-allowed-origins: ${BFF_CORS_ORIGINS:http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,http://34.227.91.156}
+  services:
+    clientes: ${CLIENTES_URL:http://localhost:8081}
+    productos: ${PRODUCTOS_URL:http://localhost:8082}
+    pedidos: ${PEDIDOS_URL:http://localhost:8083}
+    inventario: ${INVENTARIO_URL:http://localhost:8084}
+    pagos: ${PAGOS_URL:http://localhost:8085}

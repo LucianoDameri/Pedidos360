@@ -15,7 +15,11 @@ import { filter, takeUntil } from 'rxjs/operators';
       <div class="navbar-brand">🛒 Pedidos360</div>
       <div class="navbar-menu" *ngIf="isLoggedIn">
         <a routerLink="/">Inicio</a>
+        <a routerLink="/tienda">Tienda</a>
+        <a routerLink="/pedidos">Mis pedidos</a>
         <a routerLink="/clientes">Clientes</a>
+        <a routerLink="/productos">Admin productos</a>
+        <a routerLink="/inventario">Admin inventario</a>
         <span class="user-info">{{ userName }}</span>
         <button class="btn-logout" (click)="logout()">Cerrar sesión</button>
       </div>
@@ -38,7 +42,7 @@ import { filter, takeUntil } from 'rxjs/operators';
       padding: 0.8rem 2rem;
     }
     .navbar-brand { font-size: 1.4rem; font-weight: bold; }
-    .navbar-menu { display: flex; align-items: center; gap: 1.5rem; }
+    .navbar-menu { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
     .navbar-menu a { color: white; text-decoration: none; }
     .navbar-menu a:hover { text-decoration: underline; }
     .user-info { font-size: 0.85rem; opacity: 0.85; }

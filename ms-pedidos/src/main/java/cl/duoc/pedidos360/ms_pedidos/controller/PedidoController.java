@@ -4,6 +4,7 @@ import cl.duoc.pedidos360.ms_pedidos.model.Pedido;
 import cl.duoc.pedidos360.ms_pedidos.service.PedidoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,24 +39,27 @@ public class PedidoController {
     }
 
     @PostMapping
-    public ResponseEntity<Pedido> crear(@Valid @RequestBody Pedido pedido) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.crear(pedido));
+    public ResponseEntity<Pedido> crear(@Valid @RequestBody Pedido pedido,
+                                        @RequestHeader(HttpHeaders.AUTHORIZATION) String auth) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.crear(pedido, auth));
     }
 
     @PutMapping("/{id}")
-    public Pedido actualizar(@PathVariable Long id, @Valid @RequestBody Pedido pedido) {
+    public Pedido actualizar(@PathVariable Long id, @RequestBody Pedido pedido) {
         return service.actualizar(id, pedido);
     }
 
     @PatchMapping("/{id}/estado")
     public Pedido actualizarEstado(@PathVariable Long id,
-                                   @RequestParam Pedido.EstadoPedido estado) {
-        return service.actualizarEstado(id, estado);
+                                   @RequestParam Pedido.EstadoPedido estado,
+                                   @RequestHeader(HttpHeaders.AUTHORIZATION) String auth) {
+        return service.actualizarEstado(id, estado, auth);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        service.eliminar(id);
+    public ResponseEntity<Void> eliminar(@PathVariable Long id,
+                                         @RequestHeader(HttpHeaders.AUTHORIZATION) String auth) {
+        service.eliminar(id, auth);
         return ResponseEntity.noContent().build();
     }
 }

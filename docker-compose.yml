@@ -70,6 +70,9 @@ services:
       SPRING_DATASOURCE_PASSWORD: root
       AZURE_TENANT_ID: 37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df
       AZURE_CLIENT_ID: f2e886fe-a3b6-46fe-affe-61b4ea743f2a
+      CLIENTES_URL: http://ms-clientes:8081
+      PRODUCTOS_URL: http://ms-productos:8082
+      INVENTARIO_URL: http://ms-inventario:8084
     depends_on:
       mysql:
         condition: service_healthy
@@ -106,9 +109,33 @@ services:
       SPRING_DATASOURCE_PASSWORD: root
       AZURE_TENANT_ID: 37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df
       AZURE_CLIENT_ID: f2e886fe-a3b6-46fe-affe-61b4ea743f2a
+      PEDIDOS_URL: http://ms-pedidos:8083
     depends_on:
       mysql:
         condition: service_healthy
+    networks:
+      - pedidos360-net
+
+  ms-bff:
+    build: ./ms-bff
+    container_name: ms-bff
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      AZURE_TENANT_ID: 37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df
+      AZURE_CLIENT_ID: f2e886fe-a3b6-46fe-affe-61b4ea743f2a
+      CLIENTES_URL: http://ms-clientes:8081
+      PRODUCTOS_URL: http://ms-productos:8082
+      PEDIDOS_URL: http://ms-pedidos:8083
+      INVENTARIO_URL: http://ms-inventario:8084
+      PAGOS_URL: http://ms-pagos:8085
+    depends_on:
+      - ms-clientes
+      - ms-productos
+      - ms-pedidos
+      - ms-inventario
+      - ms-pagos
     networks:
       - pedidos360-net
 

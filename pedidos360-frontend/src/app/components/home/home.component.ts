@@ -16,25 +16,30 @@ import { MsalService } from '@azure/msal-angular';
       </div>
 
       <div class="modules-grid">
+        <div class="module-card" routerLink="/tienda">
+          <div class="module-icon">🛍️</div>
+          <h3>Tienda</h3>
+          <p>Elige productos y haz tu pedido</p>
+        </div>
+        <div class="module-card" routerLink="/pedidos">
+          <div class="module-icon">🧾</div>
+          <h3>Mis pedidos</h3>
+          <p>Paga o cancela tus pedidos</p>
+        </div>
         <div class="module-card" routerLink="/clientes">
           <div class="module-icon">👥</div>
           <h3>Clientes</h3>
-          <p>Gestión de clientes del sistema</p>
+          <p>Registro de clientes</p>
         </div>
-        <div class="module-card disabled">
+        <div class="module-card" routerLink="/productos">
           <div class="module-icon">📦</div>
           <h3>Productos</h3>
-          <p>Catálogo de productos</p>
+          <p>Administrar catálogo</p>
         </div>
-        <div class="module-card disabled">
-          <div class="module-icon">🧾</div>
-          <h3>Pedidos</h3>
-          <p>Gestión de pedidos</p>
-        </div>
-        <div class="module-card disabled">
-          <div class="module-icon">💳</div>
-          <h3>Pagos</h3>
-          <p>Procesamiento de pagos</p>
+        <div class="module-card" routerLink="/inventario">
+          <div class="module-icon">🏭</div>
+          <h3>Inventario</h3>
+          <p>Administrar stock</p>
         </div>
       </div>
     </div>

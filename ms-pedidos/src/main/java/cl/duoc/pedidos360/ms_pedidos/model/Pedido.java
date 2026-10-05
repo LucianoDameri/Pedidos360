@@ -31,8 +31,7 @@ public class Pedido {
     @Positive(message = "La cantidad debe ser mayor a 0")
     private Integer cantidad;
 
-    @NotNull(message = "El total es obligatorio")
-    @Positive(message = "El total debe ser mayor a 0")
+    // Lo calcula el servidor (precio del producto x cantidad)
     private BigDecimal total;
 
     @Enumerated(EnumType.STRING)

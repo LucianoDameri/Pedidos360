@@ -25,8 +25,7 @@ public class Pago {
     @Column(unique = true)
     private Long pedidoId;
 
-    @NotNull(message = "El monto es obligatorio")
-    @Positive(message = "El monto debe ser mayor a 0")
+    // Lo fija el servidor con el total del pedido
     private BigDecimal monto;
 
     @Enumerated(EnumType.STRING)
