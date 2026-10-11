@@ -1,0 +1,673 @@
+{
+  "info": {
+    "name": "Pedidos360 - RabbitMQ (ms-rabbit-admin)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Define las variables base (ej. http://IP-EC2:8086 o la URL del API Gateway) y token (JWT de Azure AD)."
+  },
+  "variable": [
+    {
+      "key": "base",
+      "value": "http://IP-EC2:8086"
+    },
+    {
+      "key": "token",
+      "value": "PEGA_AQUI_EL_JWT"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Administrador - colas",
+      "item": [
+        {
+          "name": "Crear cola de prueba",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/queues",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "queues"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"demo.queue\",\n  \"durable\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear cola con DLQ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/queues",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "queues"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"demo.con-dlq.queue\",\n  \"deadLetterExchange\": \"dlx.exchange\",\n  \"deadLetterRoutingKey\": \"tickets.dead\",\n  \"messageTtlMs\": 60000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Ver estado de una cola",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/queues/demo.queue",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "queues",
+                "demo.queue"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vaciar cola",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/queues/demo.queue/purge",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "queues",
+                "demo.queue",
+                "purge"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar cola",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/queues/demo.queue",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "queues",
+                "demo.queue"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ERROR 400 - nombre vacio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/queues",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "queues"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "ERROR 404 - cola inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/queues/no.existe",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "queues",
+                "no.existe"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Administrador - exchanges y bindings",
+      "item": [
+        {
+          "name": "Crear exchange topic",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/exchanges",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "exchanges"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"demo.exchange\",\n  \"type\": \"TOPIC\",\n  \"durable\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear cola para binding",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/queues",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "queues"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"demo.queue\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear binding",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/bindings",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "bindings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queue\": \"demo.queue\",\n  \"exchange\": \"demo.exchange\",\n  \"routingKey\": \"demo.*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Publicar mensaje de prueba",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/messages",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "messages"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"exchange\": \"demo.exchange\",\n  \"routingKey\": \"demo.hola\",\n  \"payload\": \"{\\\"hola\\\":\\\"mundo\\\"}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Eliminar binding",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/bindings?queue=demo.queue&exchange=demo.exchange&routingKey=demo.*",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "bindings"
+              ],
+              "query": [
+                {
+                  "key": "queue",
+                  "value": "demo.queue"
+                },
+                {
+                  "key": "exchange",
+                  "value": "demo.exchange"
+                },
+                {
+                  "key": "routingKey",
+                  "value": "demo.*"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar exchange",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/exchanges/demo.exchange",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "exchanges",
+                "demo.exchange"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar cola",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/queues/demo.queue",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "queues",
+                "demo.queue"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ERROR 400 - tipo de exchange invalido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/exchanges",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "exchanges"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"x.exchange\",\n  \"type\": \"INVENTADO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Pruebas de DLQ",
+      "item": [
+        {
+          "name": "Cliente inexistente -> notificaciones.dlq",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/messages",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "messages"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"exchange\": \"pedidos.exchange\",\n  \"routingKey\": \"pedido.creado\",\n  \"payload\": \"{\\\"tipo\\\":\\\"PEDIDO_CREADO\\\",\\\"pedidoId\\\":1,\\\"clienteId\\\":999999,\\\"productoId\\\":1,\\\"cantidad\\\":1}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "JSON invalido -> DLQ de notificaciones e inventario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/messages",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "messages"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"exchange\": \"pedidos.exchange\",\n  \"routingKey\": \"pedido.creado\",\n  \"payload\": \"esto no es json\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Pago sin pedidoId -> tickets.dlq",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/messages",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "messages"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"exchange\": \"pagos.exchange\",\n  \"routingKey\": \"pago.aprobado\",\n  \"payload\": \"{\\\"tipo\\\":\\\"PAGO_APROBADO\\\",\\\"clienteId\\\":1}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Ver notificaciones.dlq",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/queues/notificaciones.dlq",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "queues",
+                "notificaciones.dlq"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver inventario.dlq",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/queues/inventario.dlq",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "queues",
+                "inventario.dlq"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver tickets.dlq",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/queues/tickets.dlq",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "queues",
+                "tickets.dlq"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vaciar notificaciones.dlq",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/queues/notificaciones.dlq/purge",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "queues",
+                "notificaciones.dlq",
+                "purge"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

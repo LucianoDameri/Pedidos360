@@ -17,9 +17,42 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
+  rabbitmq:
+    # Cluster de 2 nodos: la app se conecta al primero disponible
+    addresses: ${RABBITMQ_ADDRESSES:localhost:5672}
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASS:admin123}
+    virtual-host: /
+    connection-timeout: 3s
+    listener:
+      simple:
+        acknowledge-mode: manual      # ACK explicito en cada consumidor
+        prefetch: 1                   # un mensaje sin confirmar por consumidor
+        concurrency: 1
+        max-concurrency: 3
+        default-requeue-rejected: false  # lo rechazado va a la DLQ, no vuelve a la cola
+
 azure:
   activedirectory:
     tenant-id: ${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}
     client-id: ${AZURE_CLIENT_ID:f2e886fe-a3b6-46fe-affe-61b4ea743f2a}
     jwk-set-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}/discovery/v2.0/keys
     issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}/v2.0
+
+# ---------------------------------------------------------------------------
+# Mensajeria RabbitMQ: nombres centralizados (ver MessagingProperties)
+# ---------------------------------------------------------------------------
+app:
+  messaging:
+    exchanges:
+      pedidos: pedidos.exchange
+      pagos: pagos.exchange
+      dlx: dlx.exchange
+    queues:
+      notificaciones-pedido: notificaciones.pedido.queue
+      notificaciones-pago: notificaciones.pago.queue
+      notificaciones-dlq: notificaciones.dlq
+    routing-keys:
+      pedido-todos: "pedido.*"
+      pago-aprobado: pago.aprobado
+      notificaciones-dlq: notificaciones.dead

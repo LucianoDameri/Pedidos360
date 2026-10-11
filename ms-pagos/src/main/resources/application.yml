@@ -17,6 +17,21 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
+  rabbitmq:
+    # Cluster de 2 nodos: la app se conecta al primero disponible
+    addresses: ${RABBITMQ_ADDRESSES:localhost:5672}
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASS:admin123}
+    virtual-host: /
+    connection-timeout: 3s
+    listener:
+      simple:
+        acknowledge-mode: manual      # ACK explicito en cada consumidor
+        prefetch: 1                   # un mensaje sin confirmar por consumidor
+        concurrency: 1
+        max-concurrency: 3
+        default-requeue-rejected: false  # lo rechazado va a la DLQ, no vuelve a la cola
+
 azure:
   activedirectory:
     tenant-id: ${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}
@@ -27,3 +42,13 @@ azure:
 # URL de ms-pedidos (en docker-compose: nombre de contenedor)
 servicios:
   pedidos-url: ${PEDIDOS_URL:http://localhost:8083}
+
+# ---------------------------------------------------------------------------
+# Mensajeria RabbitMQ: nombres centralizados (ver MessagingProperties)
+# ---------------------------------------------------------------------------
+app:
+  messaging:
+    exchanges:
+      pagos: pagos.exchange
+    routing-keys:
+      pago-aprobado: pago.aprobado

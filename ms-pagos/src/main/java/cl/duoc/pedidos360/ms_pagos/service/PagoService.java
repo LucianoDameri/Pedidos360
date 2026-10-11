@@ -1,6 +1,7 @@
 package cl.duoc.pedidos360.ms_pagos.service;
 
 import cl.duoc.pedidos360.ms_pagos.client.ServiciosClient;
+import cl.duoc.pedidos360.ms_pagos.messaging.publisher.PagoEventPublisher;
 import cl.duoc.pedidos360.ms_pagos.model.Pago;
 import cl.duoc.pedidos360.ms_pagos.repository.PagoRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -21,6 +22,7 @@ public class PagoService {
 
     private final PagoRepository repository;
     private final ServiciosClient servicios;
+    private final PagoEventPublisher eventos; // mensajeria asincrona (RabbitMQ)
 
     public List<Pago> listar() {
         return repository.findAll();
@@ -76,6 +78,10 @@ public class PagoService {
             repository.delete(guardado); // sin confirmar el pedido no queda pago registrado
             throw e;
         }
+
+        // Evento asincrono: notificacion al cliente y generacion del ticket
+        Object clienteId = pedido.get("clienteId");
+        eventos.pagoAprobado(guardado, clienteId != null ? Long.valueOf(String.valueOf(clienteId)) : null);
         return guardado;
     }
 
