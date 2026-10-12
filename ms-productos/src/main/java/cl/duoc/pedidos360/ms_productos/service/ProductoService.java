@@ -41,6 +41,8 @@ public class ProductoService {
         existente.setDescripcion(datos.getDescripcion());
         existente.setPrecio(datos.getPrecio());
         existente.setCategoria(datos.getCategoria());
+        existente.setPrecioAnterior(datos.getPrecioAnterior());
+        existente.setImagenUrl(datos.getImagenUrl());
         existente.setActivo(datos.isActivo());
         return repository.save(existente);
     }

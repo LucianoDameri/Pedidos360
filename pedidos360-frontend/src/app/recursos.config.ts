@@ -28,6 +28,8 @@ export const RECURSOS: Record<string, RecursoConfig> = {
       { clave: 'descripcion', etiqueta: 'Descripción', tipo: 'text' },
       { clave: 'precio', etiqueta: 'Precio', tipo: 'number', requerido: true },
       { clave: 'categoria', etiqueta: 'Categoría', tipo: 'text', requerido: true },
+      { clave: 'precioAnterior', etiqueta: 'Precio anterior (oferta)', tipo: 'number' },
+      { clave: 'imagenUrl', etiqueta: 'URL de la foto', tipo: 'text' },
       { clave: 'activo', etiqueta: 'Activo', tipo: 'checkbox', defecto: true }
     ]
   },

@@ -1,10 +1,12 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin, Subscription, timer } from 'rxjs';
 import { RecursoService } from '../../services/recurso.service';
 import { CarritoService } from '../../services/carrito.service';
+import { FotoProductoComponent } from '../foto-producto/foto-producto.component';
+import { descuento } from '../../producto.util';
 
 const REFRESCO_STOCK_MS = 5000;
 const REFRESCO_CATALOGO_MS = 30000;
@@ -12,7 +14,7 @@ const REFRESCO_CATALOGO_MS = 30000;
 @Component({
   selector: 'app-tienda',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, FotoProductoComponent],
   template: `
     <div class="tienda">
       <div class="header">
@@ -29,8 +31,9 @@ const REFRESCO_CATALOGO_MS = 30000;
         </div>
       </div>
 
-      <div class="chips" *ngIf="categorias.length > 1">
-        <button class="chip" [class.activo]="categoria === ''" (click)="categoria = ''">Todas</button>
+      <div class="chips" *ngIf="categorias.length > 1 || hayOfertas">
+        <button class="chip" [class.activo]="categoria === '' && !soloOfertas" (click)="categoria = ''; soloOfertas = false">Todas</button>
+        <button class="chip oferta" *ngIf="hayOfertas" [class.activo]="soloOfertas" (click)="soloOfertas = !soloOfertas">Ofertas</button>
         <button class="chip" *ngFor="let c of categorias" [class.activo]="categoria === c" (click)="categoria = c">{{ c }}</button>
       </div>
 
@@ -41,10 +44,17 @@ const REFRESCO_CATALOGO_MS = 30000;
       <div class="layout" *ngIf="!cargando">
         <section class="grid">
           <article class="card" *ngFor="let p of filtrados; trackBy: porId" [class.sin-stock]="disponible(p) === 0">
+            <div class="foto">
+              <app-foto-producto [producto]="p"></app-foto-producto>
+              <span class="etiqueta" *ngIf="pct(p) > 0">-{{ pct(p) }}%</span>
+            </div>
             <div class="categoria">{{ p.categoria }}</div>
             <h3>{{ p.nombre }}</h3>
             <p class="desc">{{ p.descripcion || 'Sin descripción' }}</p>
-            <div class="precio">{{ p.precio | currency:'CLP':'symbol-narrow':'1.0-0' }}</div>
+            <div class="precio">
+              {{ p.precio | currency:'CLP':'symbol-narrow':'1.0-0' }}
+              <s *ngIf="pct(p) > 0">{{ p.precioAnterior | currency:'CLP':'symbol-narrow':'1.0-0' }}</s>
+            </div>
 
             <div class="stock" [class.bajo]="disponible(p) > 0 && disponible(p) <= 5" [class.agotado]="disponible(p) === 0">
               <ng-container *ngIf="stockReal(p) === 0">Agotado</ng-container>
@@ -111,6 +121,10 @@ const REFRESCO_CATALOGO_MS = 30000;
     .chips { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
     .chip { border: 1px solid #d5dbe5; background: white; color: #444; padding: 0.35rem 0.9rem; border-radius: 999px; cursor: pointer; font-size: 0.85rem; }
     .chip.activo { background: #1a73e8; border-color: #1a73e8; color: white; }
+    .chip.oferta:not(.activo) { border-color: #c62828; color: #c62828; }
+    .foto { position: relative; margin-bottom: 0.3rem; }
+    .etiqueta { position: absolute; top: 0.5rem; left: 0.5rem; background: #c62828; color: #fff; font-weight: 700; font-size: 0.85rem; padding: 0.15rem 0.55rem; border-radius: 6px; }
+    .precio s { font-size: 0.9rem; font-weight: 400; color: #7b889d; margin-left: 0.4rem; }
     .layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 1.5rem; align-items: start; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 1.1rem; }
     .card { background: white; border-radius: 12px; padding: 1.1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 0.4rem; border: 1px solid transparent; }
@@ -163,6 +177,7 @@ export class TiendaComponent implements OnInit, OnDestroy {
   cantidades: Record<number, number> = {};
   busqueda = '';
   categoria = '';
+  soloOfertas = false;
   cargando = false;
   error = '';
   aviso = '';
@@ -171,9 +186,14 @@ export class TiendaComponent implements OnInit, OnDestroy {
 
   private temporizadores = new Subscription();
 
-  constructor(private api: RecursoService, public carrito: CarritoService) {}
+  constructor(private api: RecursoService, public carrito: CarritoService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
+    // Desde el inicio se puede llegar filtrado: /tienda?ofertas=1 o /tienda?categoria=Audio
+    this.temporizadores.add(this.route.queryParamMap.subscribe((q) => {
+      this.soloOfertas = q.get('ofertas') === '1';
+      this.categoria = q.get('categoria') ?? '';
+    }));
     this.cargando = true;
     this.cargarCatalogo(true);
     // El stock se vuelve a consultar cada pocos segundos para reflejar las compras de otros clientes.
@@ -193,7 +213,16 @@ export class TiendaComponent implements OnInit, OnDestroy {
     const q = this.busqueda.trim().toLowerCase();
     return this.productos.filter((p) =>
       (!this.categoria || p.categoria === this.categoria) &&
+      (!this.soloOfertas || descuento(p) > 0) &&
       (!q || `${p.nombre} ${p.descripcion ?? ''}`.toLowerCase().includes(q)));
+  }
+
+  get hayOfertas(): boolean {
+    return this.productos.some((p) => descuento(p) > 0);
+  }
+
+  pct(p: any): number {
+    return descuento(p);
   }
 
   porId(_: number, p: any): number {
