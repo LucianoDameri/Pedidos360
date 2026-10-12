@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin, Subscription, timer } from 'rxjs';
 import { RecursoService } from '../../services/recurso.service';
 import { CarritoService } from '../../services/carrito.service';
@@ -19,12 +19,8 @@ const REFRESCO_CATALOGO_MS = 30000;
     <div class="tienda">
       <div class="header">
         <div>
-          <h2>🛍️ Tienda</h2>
-          <div class="en-vivo" [class.caido]="errorStock">
-            <span class="punto"></span>
-            <ng-container *ngIf="!errorStock">Stock en vivo · actualizado {{ ultimaActualizacion | date:'HH:mm:ss' }}</ng-container>
-            <ng-container *ngIf="errorStock">Sin conexión, reintentando...</ng-container>
-          </div>
+          <h2>Productos</h2>
+          <div class="en-vivo caido" *ngIf="errorStock">Sin conexión, reintentando...</div>
         </div>
         <div class="filtros">
           <input type="search" class="buscar" placeholder="Buscar producto..." [(ngModel)]="busqueda"/>
@@ -32,13 +28,13 @@ const REFRESCO_CATALOGO_MS = 30000;
       </div>
 
       <div class="chips" *ngIf="categorias.length > 1 || hayOfertas">
-        <button class="chip" [class.activo]="categoria === '' && !soloOfertas" (click)="categoria = ''; soloOfertas = false">Todas</button>
-        <button class="chip oferta" *ngIf="hayOfertas" [class.activo]="soloOfertas" (click)="soloOfertas = !soloOfertas">Ofertas</button>
-        <button class="chip" *ngFor="let c of categorias" [class.activo]="categoria === c" (click)="categoria = c">{{ c }}</button>
+        <button class="chip" [class.activo]="categoria === '' && !soloOfertas" (click)="filtrar('', false)">Todas</button>
+        <button class="chip oferta" *ngIf="hayOfertas" [class.activo]="soloOfertas" (click)="filtrar(categoria, !soloOfertas)">Ofertas</button>
+        <button class="chip" *ngFor="let c of categorias" [class.activo]="categoria === c" (click)="filtrar(c, soloOfertas)">{{ c }}</button>
       </div>
 
-      <div class="alert-error" *ngIf="error">⚠️ {{ error }}</div>
-      <div class="alert-warn" *ngIf="aviso">ℹ️ {{ aviso }}</div>
+      <div class="alert-error" *ngIf="error">{{ error }}</div>
+      <div class="alert-warn" *ngIf="aviso">{{ aviso }}</div>
       <div class="loading" *ngIf="cargando">Cargando catálogo...</div>
 
       <div class="layout" *ngIf="!cargando">
@@ -76,7 +72,7 @@ const REFRESCO_CATALOGO_MS = 30000;
         </section>
 
         <aside class="carrito">
-          <h3>🛒 Tu carrito</h3>
+          <h3>Tu carrito</h3>
           <div class="vacio" *ngIf="carrito.lineas.length === 0">Aún no agregas productos.</div>
 
           <ul class="lineas" *ngIf="carrito.lineas.length > 0">
@@ -93,7 +89,7 @@ const REFRESCO_CATALOGO_MS = 30000;
                           [disabled]="l.cantidad >= stockRealId(l.productoId)" aria-label="Más">+</button>
                 </div>
                 <span class="subtotal">{{ l.precio * l.cantidad | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
-                <button class="quitar" (click)="carrito.quitar(l.productoId)" aria-label="Quitar">✕</button>
+                <button class="quitar" (click)="carrito.quitar(l.productoId)" aria-label="Quitar">Quitar</button>
               </div>
             </li>
           </ul>
@@ -113,10 +109,7 @@ const REFRESCO_CATALOGO_MS = 30000;
     .tienda { padding: 1rem 0; }
     .header { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
     .header h2 { margin: 0 0 0.25rem; }
-    .en-vivo { display: flex; align-items: center; gap: 0.45rem; font-size: 0.82rem; color: #2e7d32; }
-    .en-vivo.caido { color: #c62828; }
-    .punto { width: 9px; height: 9px; border-radius: 50%; background: currentColor; animation: latido 1.6s infinite; }
-    @keyframes latido { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .en-vivo { font-size: 0.82rem; color: #c62828; }
     .buscar { padding: 0.55rem 0.8rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; min-width: 240px; }
     .chips { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
     .chip { border: 1px solid #d5dbe5; background: white; color: #444; padding: 0.35rem 0.9rem; border-radius: 999px; cursor: pointer; font-size: 0.85rem; }
@@ -154,7 +147,7 @@ const REFRESCO_CATALOGO_MS = 30000;
     .unit { color: #888; font-size: 0.8rem; white-space: nowrap; }
     .linea-controles { display: flex; align-items: center; gap: 0.7rem; }
     .subtotal { margin-left: auto; font-weight: 600; }
-    .quitar { border: none; background: none; color: #999; cursor: pointer; font-size: 0.95rem; }
+    .quitar { border: none; background: none; color: #888; cursor: pointer; font-size: 0.8rem; text-decoration: underline; }
     .quitar:hover { color: #c62828; }
     .total { display: flex; justify-content: space-between; align-items: baseline; font-size: 1.1rem; padding-top: 0.2rem; }
     .total strong { font-size: 1.5rem; }
@@ -186,7 +179,7 @@ export class TiendaComponent implements OnInit, OnDestroy {
 
   private temporizadores = new Subscription();
 
-  constructor(private api: RecursoService, public carrito: CarritoService, private route: ActivatedRoute) {}
+  constructor(private api: RecursoService, public carrito: CarritoService, private route: ActivatedRoute, private router: Router) {}
 
   ngOnInit(): void {
     // Desde el inicio se puede llegar filtrado: /tienda?ofertas=1 o /tienda?categoria=Audio
@@ -203,6 +196,13 @@ export class TiendaComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.temporizadores.unsubscribe();
+  }
+
+  /** El filtro vive en la URL (?categoria=...&ofertas=1) para que coincida con el menú Productos. */
+  filtrar(categoria: string, soloOfertas: boolean): void {
+    this.router.navigate(['/tienda'], {
+      queryParams: { categoria: categoria || null, ofertas: soloOfertas ? 1 : null }
+    });
   }
 
   get categorias(): string[] {

@@ -12,7 +12,7 @@ import { Campo, RecursoConfig, RECURSOS } from '../../recursos.config';
   template: `
     <div class="recurso" *ngIf="config">
       <div class="header">
-        <h2>{{ config.icono }} Gestión de {{ config.titulo }}</h2>
+        <h2>Gestión de {{ config.titulo }}</h2>
         <button class="btn-primary" (click)="mostrarFormulario ? cancelar() : abrirNuevo()">
           {{ mostrarFormulario ? 'Cancelar' : '+ Nuevo' }}
         </button>
@@ -37,7 +37,7 @@ import { Campo, RecursoConfig, RECURSOS } from '../../recursos.config';
         </div>
       </div>
 
-      <div class="alert-error" *ngIf="error">⚠️ {{ error }}</div>
+      <div class="alert-error" *ngIf="error">{{ error }}</div>
       <div class="loading" *ngIf="cargando">Cargando {{ config.titulo.toLowerCase() }}...</div>
 
       <div class="table-wrapper" *ngIf="!cargando">
@@ -54,8 +54,8 @@ import { Campo, RecursoConfig, RECURSOS } from '../../recursos.config';
               <td>{{ it.id }}</td>
               <td *ngFor="let c of config.campos">{{ formatear(it[c.clave]) }}</td>
               <td class="actions">
-                <button class="btn-edit" *ngIf="config.editable" (click)="editar(it)">✏️</button>
-                <button class="btn-delete" (click)="eliminar(it.id)">🗑️</button>
+                <button class="btn-edit" *ngIf="config.editable" (click)="editar(it)">Editar</button>
+                <button class="btn-delete" (click)="eliminar(it.id)">Eliminar</button>
               </td>
             </tr>
           </tbody>
@@ -103,7 +103,8 @@ import { Campo, RecursoConfig, RECURSOS } from '../../recursos.config';
     td { padding: 0.8rem 1rem; border-top: 1px solid #f0f0f0; font-size: 0.9rem; }
     tr:hover td { background: #fafafa; }
     .actions { display: flex; gap: 0.5rem; }
-    .btn-edit, .btn-delete { background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 0.2rem; }
+    .btn-edit, .btn-delete { background: none; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; padding: 0.2rem 0.3rem; color: #1a73e8; }
+    .btn-delete { color: #c62828; }
   `]
 })
 export class RecursoComponent implements OnInit {

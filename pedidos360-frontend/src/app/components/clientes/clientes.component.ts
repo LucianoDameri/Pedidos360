@@ -10,7 +10,7 @@ import { ClienteService, Cliente } from '../../services/cliente.service';
   template: `
     <div class="clientes">
       <div class="header">
-        <h2>👥 Gestión de Clientes</h2>
+        <h2>Gestión de Clientes</h2>
         <button class="btn-primary" (click)="mostrarFormulario = !mostrarFormulario">
           {{ mostrarFormulario ? 'Cancelar' : '+ Nuevo Cliente' }}
         </button>
@@ -47,7 +47,7 @@ import { ClienteService, Cliente } from '../../services/cliente.service';
 
       <!-- Mensaje de error -->
       <div class="alert-error" *ngIf="error">
-        ⚠️ {{ error }}
+        {{ error }}
       </div>
 
       <!-- Loading -->
@@ -74,8 +74,8 @@ import { ClienteService, Cliente } from '../../services/cliente.service';
               <td>{{ c.telefono || '-' }}</td>
               <td>{{ c.direccion || '-' }}</td>
               <td class="actions">
-                <button class="btn-edit" (click)="editar(c)">✏️</button>
-                <button class="btn-delete" (click)="eliminar(c.id!)">🗑️</button>
+                <button class="btn-edit" (click)="editar(c)">Editar</button>
+                <button class="btn-delete" (click)="eliminar(c.id!)">Eliminar</button>
               </td>
             </tr>
           </tbody>
@@ -124,8 +124,9 @@ import { ClienteService, Cliente } from '../../services/cliente.service';
     tr:hover td { background: #fafafa; }
     .actions { display: flex; gap: 0.5rem; }
     .btn-edit, .btn-delete {
-      background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 0.2rem;
+      background: none; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; padding: 0.2rem 0.3rem; color: #1a73e8;
     }
+    .btn-delete { color: #c62828; }
   `]
 })
 export class ClientesComponent implements OnInit {

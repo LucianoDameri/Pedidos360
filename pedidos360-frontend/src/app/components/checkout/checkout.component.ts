@@ -22,14 +22,14 @@ interface Resultado {
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="checkout">
-      <h2>💳 Pago</h2>
+      <h2>Pago</h2>
 
       <!-- Resultado de la compra -->
       <div class="panel" *ngIf="resultados.length > 0">
         <h3>{{ todoOk ? '¡Compra realizada!' : 'Compra procesada con observaciones' }}</h3>
         <ul class="resultados">
           <li *ngFor="let r of resultados" [class.fallo]="!r.ok">
-            <span class="icono">{{ r.ok ? '✅' : '⚠️' }}</span>
+            <span class="estado" [class.ok]="r.ok">{{ r.ok ? 'Procesado' : 'Revisar' }}</span>
             <div>
               <strong>{{ r.cantidad }} × {{ r.nombre }}</strong> · {{ r.total | currency:'CLP':'symbol-narrow':'1.0-0' }}
               <div class="detalle">{{ r.detalle }}</div>
@@ -48,7 +48,7 @@ interface Resultado {
         Tu carrito está vacío. <a routerLink="/tienda">Ir a la tienda</a>
       </div>
 
-      <div class="alert-error" *ngIf="error">⚠️ {{ error }}</div>
+      <div class="alert-error" *ngIf="error">{{ error }}</div>
 
       <div class="layout" *ngIf="!cargando && resultados.length === 0 && carrito.lineas.length > 0">
         <section class="panel">
@@ -65,7 +65,7 @@ interface Resultado {
             </tbody>
           </table>
           <div class="total"><span>Total a pagar</span><strong>{{ carrito.total | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong></div>
-          <a routerLink="/tienda" class="volver">← Seguir comprando</a>
+          <a routerLink="/tienda" class="volver">Seguir comprando</a>
         </section>
 
         <section class="panel">
@@ -91,7 +91,7 @@ interface Resultado {
             <div class="metodos">
               <label class="metodo" *ngFor="let m of metodosPago" [class.elegido]="metodo === m.valor">
                 <input type="radio" name="metodo" [value]="m.valor" [(ngModel)]="metodo"/>
-                <span>{{ m.icono }} {{ m.etiqueta }}</span>
+                <span>{{ m.etiqueta }}</span>
               </label>
             </div>
           </div>
@@ -129,6 +129,8 @@ interface Resultado {
     .resultados { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.2rem; }
     .resultados li { display: flex; gap: 0.7rem; align-items: flex-start; }
     .resultados li.fallo .detalle { color: #b45309; }
+    .estado { flex: none; margin-top: 0.1rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 0.15rem 0.55rem; border-radius: 999px; background: #fff4e5; color: #8a5300; }
+    .estado.ok { background: #e6f4ea; color: #1e7a34; }
     .detalle { font-size: 0.85rem; color: #666; margin-top: 0.15rem; }
     .acciones { display: flex; gap: 0.7rem; flex-wrap: wrap; }
     .btn-primary, .btn-secundario { padding: 0.65rem 1.2rem; border-radius: 8px; text-decoration: none; font-weight: 700; }
@@ -146,10 +148,10 @@ export class CheckoutComponent implements OnInit {
   direccion = '';
   metodo = 'TARJETA_DEBITO';
   readonly metodosPago = [
-    { valor: 'TARJETA_DEBITO', etiqueta: 'Débito', icono: '💳' },
-    { valor: 'TARJETA_CREDITO', etiqueta: 'Crédito', icono: '💳' },
-    { valor: 'TRANSFERENCIA', etiqueta: 'Transferencia', icono: '🏦' },
-    { valor: 'EFECTIVO', etiqueta: 'Efectivo', icono: '💵' }
+    { valor: 'TARJETA_DEBITO', etiqueta: 'Débito' },
+    { valor: 'TARJETA_CREDITO', etiqueta: 'Crédito' },
+    { valor: 'TRANSFERENCIA', etiqueta: 'Transferencia' },
+    { valor: 'EFECTIVO', etiqueta: 'Efectivo' }
   ];
   cargando = false;
   procesando = false;

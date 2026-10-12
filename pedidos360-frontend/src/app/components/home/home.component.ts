@@ -90,20 +90,6 @@ import { descuento } from '../../producto.util';
         </div>
       </section>
 
-      <!-- Categorías -->
-      <section class="seccion" *ngIf="categorias.length > 0">
-        <header class="seccion-cabecera">
-          <h2>Compra por categoría</h2>
-          <a routerLink="/tienda">Ver todo el catálogo</a>
-        </header>
-        <div class="categorias">
-          <a *ngFor="let c of categorias" routerLink="/tienda" [queryParams]="{ categoria: c.nombre }">
-            <strong>{{ c.nombre }}</strong>
-            <span>{{ c.cantidad }} {{ c.cantidad === 1 ? 'producto' : 'productos' }}</span>
-          </a>
-        </div>
-      </section>
-
       <section class="pasos">
         <h2>Así funciona tu compra</h2>
         <ol>
@@ -199,11 +185,6 @@ import { descuento } from '../../producto.util';
     .tarjeta h3 { font-size: 1rem; font-weight: 700; color: #0e1726; line-height: 1.2; min-height: 2.4em; }
     .tarjeta .foto { margin-bottom: 0.4rem; }
 
-    .categorias { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 0; border-top: 1px solid #d5dce8; }
-    .categorias a { display: flex; flex-direction: column; gap: 0.15rem; padding: 1rem 1rem 1rem 0; border-bottom: 1px solid #d5dce8; text-decoration: none; color: #0e1726; }
-    .categorias a strong { font-size: 1.02rem; font-weight: 700; }
-    .categorias a span { font-size: 0.85rem; color: #5b6a82; }
-    .categorias a:hover strong { color: #1a73e8; }
 
     .pasos ol { list-style: none; padding: 0; margin: 1.6rem 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid #d5dce8; }
     .pasos li { display: flex; gap: 1rem; padding: 1.4rem 1.4rem 0 0; }
@@ -286,16 +267,6 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   get masOfertas(): any[] {
     return this.ofertas.filter((p) => p.id !== this.destacado?.id).slice(0, 4);
-  }
-
-  get categorias(): { nombre: string; cantidad: number }[] {
-    const cuenta = new Map<string, number>();
-    this.productos
-      .filter((p) => p.categoria && (this.stock[p.id] ?? 0) > 0)
-      .forEach((p) => cuenta.set(p.categoria, (cuenta.get(p.categoria) ?? 0) + 1));
-    return [...cuenta.entries()]
-      .map(([nombre, cantidad]) => ({ nombre, cantidad }))
-      .sort((a, b) => a.nombre.localeCompare(b.nombre));
   }
 
   /** Unidades que aún se pueden agregar: el stock menos lo que ya está en el carrito. */
