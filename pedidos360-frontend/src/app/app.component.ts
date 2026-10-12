@@ -13,11 +13,11 @@ import { CarritoService } from './services/carrito.service';
   imports: [CommonModule, RouterOutlet, RouterLink],
   template: `
     <nav class="navbar">
-      <div class="navbar-brand">🛒 Pedidos360</div>
+      <div class="navbar-brand">Pedidos360</div>
       <div class="navbar-menu" *ngIf="isLoggedIn">
         <a routerLink="/">Inicio</a>
         <a routerLink="/tienda">Tienda</a>
-        <a routerLink="/checkout" class="carrito-link">🛒 Carrito
+        <a routerLink="/checkout" class="carrito-link">Carrito
           <span class="badge" *ngIf="(carrito.cantidadTotal$ | async) as n">{{ n }}</span>
         </a>
         <a routerLink="/pedidos">Mis pedidos</a>
@@ -41,19 +41,19 @@ import { CarritoService } from './services/carrito.service';
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #1a73e8;
+      background: #0e1726;
       color: white;
-      padding: 0.8rem 2rem;
+      padding: 0.85rem 2rem;
     }
-    .navbar-brand { font-size: 1.4rem; font-weight: bold; }
+    .navbar-brand { font-family: 'Bricolage Grotesque', 'Segoe UI', sans-serif; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.01em; }
     .navbar-menu { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
-    .navbar-menu a { color: white; text-decoration: none; }
-    .navbar-menu a:hover { text-decoration: underline; }
+    .navbar-menu a { color: #d6deeb; text-decoration: none; font-size: 0.93rem; }
+    .navbar-menu a:hover { color: white; text-decoration: underline; }
     .badge { background: #ff7a2f; color: white; border-radius: 999px; padding: 0.05rem 0.5rem; font-size: 0.75rem; font-weight: 700; margin-left: 0.2rem; }
     .user-info { font-size: 0.85rem; opacity: 0.85; }
     .btn-login, .btn-logout {
       background: white;
-      color: #1a73e8;
+      color: #0e1726;
       border: none;
       padding: 0.4rem 1rem;
       border-radius: 4px;
