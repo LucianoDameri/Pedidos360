@@ -1,11 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { MsalService } from '@azure/msal-angular';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription, timer } from 'rxjs';
 import { RecursoService } from '../../services/recurso.service';
-import { ClienteActualService } from '../../services/cliente-actual.service';
+import { CarritoService } from '../../services/carrito.service';
+
+const REFRESCO_STOCK_MS = 5000;
+const REFRESCO_CATALOGO_MS = 30000;
 
 @Component({
   selector: 'app-tienda',
@@ -14,180 +16,283 @@ import { ClienteActualService } from '../../services/cliente-actual.service';
   template: `
     <div class="tienda">
       <div class="header">
-        <h2>🛍️ Catálogo de productos</h2>
-        <div class="comprador" *ngIf="clientes.length > 0">
-          <label>Comprar como:</label>
-          <select [(ngModel)]="clienteId" (ngModelChange)="cambiarCliente()">
-            <option *ngFor="let c of clientes" [ngValue]="c.id">{{ c.nombre }} ({{ c.email }})</option>
-          </select>
+        <div>
+          <h2>🛍️ Tienda</h2>
+          <div class="en-vivo" [class.caido]="errorStock">
+            <span class="punto"></span>
+            <ng-container *ngIf="!errorStock">Stock en vivo · actualizado {{ ultimaActualizacion | date:'HH:mm:ss' }}</ng-container>
+            <ng-container *ngIf="errorStock">Sin conexión, reintentando...</ng-container>
+          </div>
         </div>
+        <div class="filtros">
+          <input type="search" class="buscar" placeholder="Buscar producto..." [(ngModel)]="busqueda"/>
+        </div>
+      </div>
+
+      <div class="chips" *ngIf="categorias.length > 1">
+        <button class="chip" [class.activo]="categoria === ''" (click)="categoria = ''">Todas</button>
+        <button class="chip" *ngFor="let c of categorias" [class.activo]="categoria === c" (click)="categoria = c">{{ c }}</button>
       </div>
 
       <div class="alert-error" *ngIf="error">⚠️ {{ error }}</div>
-      <div class="alert-ok" *ngIf="mensaje">✅ {{ mensaje }} <a routerLink="/pedidos">Ir a Mis pedidos</a></div>
-      <div class="alert-warn" *ngIf="!cargando && clientes.length === 0">
-        Primero debes <a routerLink="/clientes">registrar un cliente</a> para poder comprar.
-      </div>
+      <div class="alert-warn" *ngIf="aviso">ℹ️ {{ aviso }}</div>
       <div class="loading" *ngIf="cargando">Cargando catálogo...</div>
 
-      <div class="direccion" *ngIf="!cargando && clientes.length > 0">
-        <label>Dirección de entrega</label>
-        <input type="text" [(ngModel)]="direccion" placeholder="Calle, número, comuna"/>
-      </div>
+      <div class="layout" *ngIf="!cargando">
+        <section class="grid">
+          <article class="card" *ngFor="let p of filtrados; trackBy: porId" [class.sin-stock]="disponible(p) === 0">
+            <div class="categoria">{{ p.categoria }}</div>
+            <h3>{{ p.nombre }}</h3>
+            <p class="desc">{{ p.descripcion || 'Sin descripción' }}</p>
+            <div class="precio">{{ p.precio | currency:'CLP':'symbol-narrow':'1.0-0' }}</div>
 
-      <div class="grid" *ngIf="!cargando">
-        <div class="card" *ngFor="let p of productos">
-          <div class="categoria">{{ p.categoria }}</div>
-          <h3>{{ p.nombre }}</h3>
-          <p class="desc">{{ p.descripcion || 'Sin descripción' }}</p>
-          <div class="precio">{{ p.precio | currency:'CLP':'symbol-narrow':'1.0-0' }}</div>
-          <div class="stock" [class.agotado]="disponible(p) === 0" [class.bajo]="disponible(p) > 0 && disponible(p) <= 5">
-            <ng-container *ngIf="disponible(p) > 0">Stock: {{ disponible(p) }} disponibles</ng-container>
-            <ng-container *ngIf="disponible(p) === 0">Agotado</ng-container>
+            <div class="stock" [class.bajo]="disponible(p) > 0 && disponible(p) <= 5" [class.agotado]="disponible(p) === 0">
+              <ng-container *ngIf="stockReal(p) === 0">Agotado</ng-container>
+              <ng-container *ngIf="stockReal(p) > 0 && disponible(p) === 0">Tienes todo el stock en tu carrito</ng-container>
+              <ng-container *ngIf="disponible(p) > 0 && disponible(p) <= 5">¡Últimas {{ disponible(p) }} unidades!</ng-container>
+              <ng-container *ngIf="disponible(p) > 5">{{ disponible(p) }} disponibles</ng-container>
+            </div>
+
+            <div class="comprar" *ngIf="disponible(p) > 0">
+              <div class="stepper">
+                <button (click)="cambiar(p, -1)" [disabled]="cantidadElegida(p) <= 1" aria-label="Menos">−</button>
+                <span>{{ cantidadElegida(p) }}</span>
+                <button (click)="cambiar(p, 1)" [disabled]="cantidadElegida(p) >= disponible(p)" aria-label="Más">+</button>
+              </div>
+              <button class="btn-primary" (click)="agregar(p)">Agregar al carrito</button>
+            </div>
+          </article>
+          <div class="empty" *ngIf="filtrados.length === 0">No hay productos que coincidan.</div>
+        </section>
+
+        <aside class="carrito">
+          <h3>🛒 Tu carrito</h3>
+          <div class="vacio" *ngIf="carrito.lineas.length === 0">Aún no agregas productos.</div>
+
+          <ul class="lineas" *ngIf="carrito.lineas.length > 0">
+            <li *ngFor="let l of carrito.lineas">
+              <div class="linea-info">
+                <strong>{{ l.nombre }}</strong>
+                <span class="unit">{{ l.precio | currency:'CLP':'symbol-narrow':'1.0-0' }} c/u</span>
+              </div>
+              <div class="linea-controles">
+                <div class="stepper chico">
+                  <button (click)="cambiarLinea(l.productoId, l.cantidad - 1)" aria-label="Menos">−</button>
+                  <span>{{ l.cantidad }}</span>
+                  <button (click)="cambiarLinea(l.productoId, l.cantidad + 1)"
+                          [disabled]="l.cantidad >= stockRealId(l.productoId)" aria-label="Más">+</button>
+                </div>
+                <span class="subtotal">{{ l.precio * l.cantidad | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
+                <button class="quitar" (click)="carrito.quitar(l.productoId)" aria-label="Quitar">✕</button>
+              </div>
+            </li>
+          </ul>
+
+          <div class="total" *ngIf="carrito.lineas.length > 0">
+            <span>Total</span>
+            <strong>{{ carrito.total | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong>
           </div>
-          <div class="comprar" *ngIf="disponible(p) > 0">
-            <input type="number" min="1" [max]="disponible(p)" [(ngModel)]="cantidades[p.id]"/>
-            <button class="btn-primary" [disabled]="comprando === p.id || clientes.length === 0" (click)="comprar(p)">
-              {{ comprando === p.id ? 'Procesando...' : 'Comprar' }}
-            </button>
-          </div>
-        </div>
-        <div class="empty" *ngIf="productos.length === 0">No hay productos disponibles.</div>
+          <a class="btn-pagar" routerLink="/checkout" *ngIf="carrito.lineas.length > 0">Ir a pagar</a>
+          <button class="btn-vaciar" *ngIf="carrito.lineas.length > 0" (click)="carrito.vaciar()">Vaciar carrito</button>
+          <a class="mis-pedidos" routerLink="/pedidos">Ver mis pedidos</a>
+        </aside>
       </div>
     </div>
   `,
   styles: [`
     .tienda { padding: 1rem 0; }
-    .header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
-    .header h2 { margin: 0; }
-    .comprador { display: flex; align-items: center; gap: 0.5rem; }
-    .comprador select, .direccion input { padding: 0.5rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; }
-    .direccion { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1.2rem; max-width: 480px; }
-    .direccion label { font-size: 0.85rem; font-weight: 600; color: #555; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1.2rem; }
-    .card { background: white; border-radius: 10px; padding: 1.2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 0.4rem; }
-    .card h3 { margin: 0; color: #1a73e8; }
-    .categoria { font-size: 0.75rem; text-transform: uppercase; color: #888; letter-spacing: 0.05em; }
-    .desc { margin: 0; color: #666; font-size: 0.9rem; min-height: 2.4rem; }
-    .precio { font-size: 1.4rem; font-weight: bold; }
-    .stock { font-size: 0.85rem; color: #2e7d32; }
-    .stock.bajo { color: #ef6c00; }
+    .header { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .header h2 { margin: 0 0 0.25rem; }
+    .en-vivo { display: flex; align-items: center; gap: 0.45rem; font-size: 0.82rem; color: #2e7d32; }
+    .en-vivo.caido { color: #c62828; }
+    .punto { width: 9px; height: 9px; border-radius: 50%; background: currentColor; animation: latido 1.6s infinite; }
+    @keyframes latido { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .buscar { padding: 0.55rem 0.8rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; min-width: 240px; }
+    .chips { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+    .chip { border: 1px solid #d5dbe5; background: white; color: #444; padding: 0.35rem 0.9rem; border-radius: 999px; cursor: pointer; font-size: 0.85rem; }
+    .chip.activo { background: #1a73e8; border-color: #1a73e8; color: white; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 1.5rem; align-items: start; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 1.1rem; }
+    .card { background: white; border-radius: 12px; padding: 1.1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 0.4rem; border: 1px solid transparent; }
+    .card:hover { border-color: #c9dcfb; }
+    .card.sin-stock { opacity: 0.65; }
+    .card h3 { margin: 0; font-size: 1.05rem; color: #1a1a2e; }
+    .categoria { font-size: 0.72rem; text-transform: uppercase; color: #888; letter-spacing: 0.06em; }
+    .desc { margin: 0; color: #666; font-size: 0.85rem; min-height: 2.3rem; }
+    .precio { font-size: 1.35rem; font-weight: 700; }
+    .stock { font-size: 0.85rem; color: #2e7d32; min-height: 1.2rem; }
+    .stock.bajo { color: #b45309; font-weight: 600; }
     .stock.agotado { color: #c62828; font-weight: 600; }
-    .comprar { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
-    .comprar input { width: 70px; padding: 0.4rem; border: 1px solid #ddd; border-radius: 6px; }
-    .btn-primary { background: #1a73e8; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: bold; flex: 1; }
-    .btn-primary:disabled { background: #9bb8e8; cursor: default; }
+    .comprar { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.3rem; }
+    .stepper { display: inline-flex; align-items: center; border: 1px solid #d5dbe5; border-radius: 8px; overflow: hidden; align-self: flex-start; }
+    .stepper button { width: 34px; height: 34px; border: none; background: #f4f6f9; cursor: pointer; font-size: 1.1rem; }
+    .stepper button:disabled { opacity: 0.4; cursor: default; }
+    .stepper span { min-width: 38px; text-align: center; font-weight: 600; }
+    .stepper.chico button { width: 28px; height: 28px; }
+    .btn-primary { background: #1a73e8; color: white; border: none; padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; }
+    .btn-primary:hover { background: #1765cc; }
+    .carrito { background: white; border-radius: 12px; padding: 1.2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: sticky; top: 1rem; display: flex; flex-direction: column; gap: 0.8rem; }
+    .carrito h3 { margin: 0; }
+    .vacio { color: #888; font-size: 0.9rem; padding: 0.6rem 0; }
+    .lineas { list-style: none; display: flex; flex-direction: column; gap: 0.9rem; padding: 0; margin: 0; max-height: 46vh; overflow-y: auto; }
+    .lineas li { display: flex; flex-direction: column; gap: 0.4rem; padding-bottom: 0.8rem; border-bottom: 1px solid #f0f0f0; }
+    .linea-info { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.92rem; }
+    .unit { color: #888; font-size: 0.8rem; white-space: nowrap; }
+    .linea-controles { display: flex; align-items: center; gap: 0.7rem; }
+    .subtotal { margin-left: auto; font-weight: 600; }
+    .quitar { border: none; background: none; color: #999; cursor: pointer; font-size: 0.95rem; }
+    .quitar:hover { color: #c62828; }
+    .total { display: flex; justify-content: space-between; align-items: baseline; font-size: 1.1rem; padding-top: 0.2rem; }
+    .total strong { font-size: 1.5rem; }
+    .btn-pagar { display: block; text-align: center; background: #1e8e3e; color: white; text-decoration: none; padding: 0.75rem; border-radius: 8px; font-weight: 700; }
+    .btn-pagar:hover { background: #187533; }
+    .btn-vaciar { background: none; border: none; color: #888; cursor: pointer; font-size: 0.85rem; text-decoration: underline; }
+    .mis-pedidos { text-align: center; font-size: 0.85rem; color: #1a73e8; }
     .alert-error { background: #fce8e6; color: #c62828; border-radius: 8px; padding: 0.8rem 1rem; margin-bottom: 1rem; }
-    .alert-ok { background: #e6f4ea; color: #1e7a34; border-radius: 8px; padding: 0.8rem 1rem; margin-bottom: 1rem; }
     .alert-warn { background: #fff4e5; color: #8a5300; border-radius: 8px; padding: 0.8rem 1rem; margin-bottom: 1rem; }
     .loading, .empty { text-align: center; padding: 2rem; color: #888; grid-column: 1 / -1; }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .carrito { position: static; }
+    }
   `]
 })
-export class TiendaComponent implements OnInit {
+export class TiendaComponent implements OnInit, OnDestroy {
   productos: any[] = [];
-  stock: Record<number, any> = {};
-  clientes: any[] = [];
-  clienteId: number | null = null;
-  direccion = '';
+  stock: Record<number, number> = {};
   cantidades: Record<number, number> = {};
+  busqueda = '';
+  categoria = '';
   cargando = false;
-  comprando: number | null = null;
   error = '';
-  mensaje = '';
+  aviso = '';
+  errorStock = false;
+  ultimaActualizacion = new Date();
 
-  constructor(
-    private api: RecursoService,
-    private actual: ClienteActualService,
-    private auth: MsalService
-  ) {}
+  private temporizadores = new Subscription();
+
+  constructor(private api: RecursoService, public carrito: CarritoService) {}
 
   ngOnInit(): void {
-    this.cargar(true);
+    this.cargando = true;
+    this.cargarCatalogo(true);
+    // El stock se vuelve a consultar cada pocos segundos para reflejar las compras de otros clientes.
+    this.temporizadores.add(timer(REFRESCO_STOCK_MS, REFRESCO_STOCK_MS).subscribe(() => this.cargarStock()));
+    this.temporizadores.add(timer(REFRESCO_CATALOGO_MS, REFRESCO_CATALOGO_MS).subscribe(() => this.cargarCatalogo(false)));
   }
 
-  cargar(conSpinner: boolean): void {
-    if (conSpinner) this.cargando = true;
+  ngOnDestroy(): void {
+    this.temporizadores.unsubscribe();
+  }
+
+  get categorias(): string[] {
+    return [...new Set(this.productos.map((p) => p.categoria).filter(Boolean))].sort();
+  }
+
+  get filtrados(): any[] {
+    const q = this.busqueda.trim().toLowerCase();
+    return this.productos.filter((p) =>
+      (!this.categoria || p.categoria === this.categoria) &&
+      (!q || `${p.nombre} ${p.descripcion ?? ''}`.toLowerCase().includes(q)));
+  }
+
+  porId(_: number, p: any): number {
+    return p.id;
+  }
+
+  stockReal(p: any): number {
+    return this.stock[p.id] ?? 0;
+  }
+
+  stockRealId(id: number): number {
+    return this.stock[id] ?? 0;
+  }
+
+  /** Unidades que aún se pueden agregar: el stock menos lo que ya está en el carrito. */
+  disponible(p: any): number {
+    return Math.max(0, this.stockReal(p) - this.carrito.cantidadDe(p.id));
+  }
+
+  cantidadElegida(p: any): number {
+    const max = this.disponible(p);
+    const actual = this.cantidades[p.id] ?? 1;
+    return Math.min(Math.max(actual, 1), Math.max(max, 1));
+  }
+
+  cambiar(p: any, delta: number): void {
+    this.cantidades[p.id] = Math.min(Math.max(this.cantidadElegida(p) + delta, 1), this.disponible(p));
+  }
+
+  agregar(p: any): void {
+    const cantidad = this.cantidadElegida(p);
+    if (cantidad < 1 || cantidad > this.disponible(p)) return;
+    this.carrito.agregar(p, cantidad);
+    this.cantidades[p.id] = 1;
+    this.aviso = '';
+  }
+
+  cambiarLinea(productoId: number, cantidad: number): void {
+    this.carrito.fijarCantidad(productoId, Math.min(cantidad, this.stockRealId(productoId)));
+  }
+
+  private cargarCatalogo(primeraVez: boolean): void {
     forkJoin({
       productos: this.api.listar('productos'),
-      inventario: this.api.listar('inventario'),
-      clientes: this.api.listar('clientes')
+      inventario: this.api.listar('inventario')
     }).subscribe({
       next: (r) => {
         this.productos = r.productos.filter((p) => p.activo);
-        this.stock = {};
-        r.inventario.forEach((s) => (this.stock[s.productoId] = s));
-        this.productos.forEach((p) => {
-          if (!this.cantidades[p.id]) this.cantidades[p.id] = 1;
-        });
-        this.clientes = r.clientes;
-        const email = this.auth.instance.getAllAccounts()[0]?.username;
-        this.clienteId = this.actual.elegir(r.clientes, email);
-        if (!this.direccion) this.aplicarDireccion();
+        this.aplicarInventario(r.inventario);
+        this.productos.forEach((p) => this.carrito.fijarPrecio(p.id, p.precio));
         this.cargando = false;
+        this.error = '';
       },
       error: (err) => {
-        this.error = this.mensajeError(err, 'cargar el catálogo');
         this.cargando = false;
+        if (primeraVez) this.error = this.mensajeError(err);
       }
     });
   }
 
-  disponible(p: any): number {
-    return this.stock[p.id]?.cantidad ?? 0;
-  }
-
-  cambiarCliente(): void {
-    this.actual.id = this.clienteId;
-    this.aplicarDireccion();
-  }
-
-  comprar(p: any): void {
-    this.error = '';
-    this.mensaje = '';
-    const cantidad = Number(this.cantidades[p.id]);
-    if (this.clienteId === null) {
-      this.error = 'Selecciona un cliente para comprar.';
-      return;
-    }
-    if (!Number.isInteger(cantidad) || cantidad < 1) {
-      this.error = 'La cantidad debe ser al menos 1.';
-      return;
-    }
-    if (cantidad > this.disponible(p)) {
-      this.error = `Solo quedan ${this.disponible(p)} unidades de ${p.nombre}.`;
-      return;
-    }
-
-    this.comprando = p.id;
-    const body: Record<string, any> = { clienteId: this.clienteId, productoId: p.id, cantidad };
-    if (this.direccion) body['direccionEntrega'] = this.direccion;
-
-    this.api.crear('pedidos', body).subscribe({
-      next: (pedido) => {
-        this.comprando = null;
-        this.cantidades[p.id] = 1;
-        this.mensaje = `Pedido #${pedido.id} creado (${cantidad} × ${p.nombre}), total $${pedido.total}. Falta pagarlo.`;
-        this.cargar(false); // refresca el stock
+  private cargarStock(): void {
+    this.api.listar('inventario').subscribe({
+      next: (inventario) => {
+        this.aplicarInventario(inventario);
+        this.errorStock = false;
       },
-      error: (err) => {
-        this.comprando = null;
-        this.error = this.mensajeError(err, 'crear el pedido');
-        this.cargar(false);
-      }
+      error: () => (this.errorStock = true)
     });
   }
 
-  private aplicarDireccion(): void {
-    const c = this.clientes.find((x) => x.id === this.clienteId);
-    this.direccion = c?.direccion ?? '';
+  private aplicarInventario(inventario: any[]): void {
+    const nuevo: Record<number, number> = {};
+    inventario.forEach((s) => (nuevo[s.productoId] = s.cantidad));
+    this.stock = nuevo;
+    this.ultimaActualizacion = new Date();
+    this.ajustarCarrito();
   }
 
-  private mensajeError(err: any, accion: string): string {
+  /** Si otro cliente compró y ya no alcanza el stock, el carrito se corrige y se avisa. */
+  private ajustarCarrito(): void {
+    const cambios: string[] = [];
+    for (const linea of [...this.carrito.lineas]) {
+      const disponible = this.stock[linea.productoId] ?? 0;
+      if (linea.cantidad > disponible) {
+        this.carrito.fijarCantidad(linea.productoId, disponible);
+        cambios.push(disponible === 0 ? `${linea.nombre} se agotó` : `${linea.nombre}: solo quedan ${disponible}`);
+      }
+    }
+    if (cambios.length > 0) {
+      this.aviso = `Se ajustó tu carrito porque cambió el stock (${cambios.join('; ')}).`;
+    }
+  }
+
+  private mensajeError(err: any): string {
     const detalle = err?.error?.error;
     if (detalle) return detalle;
     const estado = err?.status;
     if (estado === 401 || estado === 403) return `Sin autorización (HTTP ${estado}): revisa tu sesión.`;
     if (estado === 0) return 'No hay conexión con el API Gateway o el backend.';
-    return `No se pudo ${accion} (HTTP ${estado ?? '?'}).`;
+    return `No se pudo cargar el catálogo (HTTP ${estado ?? '?'}).`;
   }
 }

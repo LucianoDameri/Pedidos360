@@ -5,6 +5,7 @@ import { MsalService, MsalBroadcastService, MSAL_GUARD_CONFIG, MsalGuardConfigur
 import { InteractionStatus, RedirectRequest } from '@azure/msal-browser';
 import { Subject } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
+import { CarritoService } from './services/carrito.service';
 
 @Component({
   selector: 'app-root',
@@ -16,6 +17,9 @@ import { filter, takeUntil } from 'rxjs/operators';
       <div class="navbar-menu" *ngIf="isLoggedIn">
         <a routerLink="/">Inicio</a>
         <a routerLink="/tienda">Tienda</a>
+        <a routerLink="/checkout" class="carrito-link">🛒 Carrito
+          <span class="badge" *ngIf="(carrito.cantidadTotal$ | async) as n">{{ n }}</span>
+        </a>
         <a routerLink="/pedidos">Mis pedidos</a>
         <a routerLink="/clientes">Clientes</a>
         <a routerLink="/productos">Admin productos</a>
@@ -45,6 +49,7 @@ import { filter, takeUntil } from 'rxjs/operators';
     .navbar-menu { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
     .navbar-menu a { color: white; text-decoration: none; }
     .navbar-menu a:hover { text-decoration: underline; }
+    .badge { background: #ff7a2f; color: white; border-radius: 999px; padding: 0.05rem 0.5rem; font-size: 0.75rem; font-weight: 700; margin-left: 0.2rem; }
     .user-info { font-size: 0.85rem; opacity: 0.85; }
     .btn-login, .btn-logout {
       background: white;
@@ -67,7 +72,8 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(
     @Inject(MSAL_GUARD_CONFIG) private msalGuardConfig: MsalGuardConfiguration,
     private authService: MsalService,
-    private msalBroadcastService: MsalBroadcastService
+    private msalBroadcastService: MsalBroadcastService,
+    public carrito: CarritoService
   ) {}
 
   ngOnInit(): void {
