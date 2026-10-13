@@ -16,8 +16,11 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Topologia RabbitMQ de ms-clientes (caso de uso "notificaciones").
  *
- *   pedidos.exchange --(pedido.*)-------> notificaciones.pedido.queue --+
- *   pagos.exchange   --(pago.aprobado)--> notificaciones.pago.queue ----+--(rechazo)--> dlx.exchange --> notificaciones.dlq
+ *   pedidos.exchange --(pedido.*)-------> notificaciones.queue --(rechazo)--> dlx.exchange --> notificaciones.dlq
+ *   pagos.exchange   --(pago.aprobado)--> notificaciones.queue
+ *
+ * Una sola cola recibe los dos tipos de evento (dos bindings); el consumidor distingue
+ * pedido y pago por la routing key con la que llego el mensaje.
  *
  * Los nombres vienen de application.yml (MessagingProperties).
  */
@@ -50,31 +53,31 @@ public class RabbitConfig {
 
     // ---------------------------------------------------------------- colas
     @Bean
-    public Queue notificacionesPedidoQueue() {
-        return conDeadLetter(props.getQueues().getNotificacionesPedido());
-    }
-
-    @Bean
-    public Queue notificacionesPagoQueue() {
-        return conDeadLetter(props.getQueues().getNotificacionesPago());
+    public Queue notificacionesQueue() {
+        return QueueBuilder.durable(props.getQueues().getNotificaciones())
+                .withArgument("x-dead-letter-exchange", props.getExchanges().getDlx())
+                .withArgument("x-dead-letter-routing-key", props.getRoutingKeys().getNotificacionesDlq())
+                .build();
     }
 
     @Bean
     public Queue notificacionesDlq() {
-        return QueueBuilder.durable(props.getQueues().getNotificacionesDlq()).build();
+        return QueueBuilder.durable(props.getQueues().getNotificacionesDlq())
+                .withArgument("x-message-ttl", props.getRetention().getDlqTtlMs())
+                .build();
     }
 
     // ---------------------------------------------------------------- bindings
     @Bean
     public Binding notificacionesPedidoBinding() {
-        return BindingBuilder.bind(notificacionesPedidoQueue())
+        return BindingBuilder.bind(notificacionesQueue())
                 .to(pedidosExchange())
                 .with(props.getRoutingKeys().getPedidoTodos());
     }
 
     @Bean
     public Binding notificacionesPagoBinding() {
-        return BindingBuilder.bind(notificacionesPagoQueue())
+        return BindingBuilder.bind(notificacionesQueue())
                 .to(pagosExchange())
                 .with(props.getRoutingKeys().getPagoAprobado());
     }
@@ -84,13 +87,5 @@ public class RabbitConfig {
         return BindingBuilder.bind(notificacionesDlq())
                 .to(dlxExchange())
                 .with(props.getRoutingKeys().getNotificacionesDlq());
-    }
-
-    /** Cola durable cuyos mensajes rechazados se re-enrutan al DLX. */
-    private Queue conDeadLetter(String nombre) {
-        return QueueBuilder.durable(nombre)
-                .withArgument("x-dead-letter-exchange", props.getExchanges().getDlx())
-                .withArgument("x-dead-letter-routing-key", props.getRoutingKeys().getNotificacionesDlq())
-                .build();
     }
 }

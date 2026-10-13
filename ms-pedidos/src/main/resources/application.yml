@@ -58,6 +58,8 @@ app:
     queues:
       tickets-pago: tickets.pago.queue
       tickets-dlq: tickets.dlq
+    retention:
+      dlq-ttl-ms: 86400000   # los mensajes de las DLQ se conservan 24 h (guia 2.2.3)
     routing-keys:
       pedido-creado: pedido.creado
       pedido-cancelado: pedido.cancelado

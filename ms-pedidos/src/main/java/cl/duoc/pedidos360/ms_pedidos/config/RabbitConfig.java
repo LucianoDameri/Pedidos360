@@ -63,7 +63,9 @@ public class RabbitConfig {
 
     @Bean
     public Queue ticketsDlq() {
-        return QueueBuilder.durable(props.getQueues().getTicketsDlq()).build();
+        return QueueBuilder.durable(props.getQueues().getTicketsDlq())
+                .withArgument("x-message-ttl", props.getRetention().getDlqTtlMs())
+                .build();
     }
 
     // ---------------------------------------------------------------- bindings

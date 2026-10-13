@@ -17,6 +17,7 @@ public class MessagingProperties {
     private Exchanges exchanges = new Exchanges();
     private Queues queues = new Queues();
     private RoutingKeys routingKeys = new RoutingKeys();
+    private Retention retention = new Retention();
 
     @Data
     public static class Exchanges {
@@ -37,6 +38,12 @@ public class MessagingProperties {
         private String pedidoCancelado;
         private String pagoAprobado;
         private String ticketsDlq;
+    }
+
+    @Data
+    public static class Retention {
+        /** Tiempo (ms) que un mensaje permanece en una DLQ antes de expirar. */
+        private long dlqTtlMs = 86400000L;
     }
 
 }

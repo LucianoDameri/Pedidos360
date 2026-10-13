@@ -53,7 +53,9 @@ public class RabbitConfig {
 
     @Bean
     public Queue inventarioDlq() {
-        return QueueBuilder.durable(props.getQueues().getInventarioDlq()).build();
+        return QueueBuilder.durable(props.getQueues().getInventarioDlq())
+                .withArgument("x-message-ttl", props.getRetention().getDlqTtlMs())
+                .build();
     }
 
     // ---------------------------------------------------------------- bindings

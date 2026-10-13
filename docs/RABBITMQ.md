@@ -16,7 +16,7 @@ compra y el pago **no fallan**: el productor solo registra el error en el log.
 | Conexión de los servicios | `RABBITMQ_ADDRESSES=rabbitmq-1:5672,rabbitmq-2:5672` (si un nodo cae, usan el otro) |
 | Administrador | `ms-rabbit-admin` en `:8086` (API REST protegida con JWT) |
 
-## 2. Diseño: 3 exchanges, 4 colas principales y 3 DLQ
+## 2. Diseño: 3 exchanges, 3 colas principales y 3 DLQ
 
 | Exchange | Tipo | Quién publica |
 |---|---|---|
@@ -26,24 +26,30 @@ compra y el pago **no fallan**: el productor solo registra el error en el log.
 
 | Cola principal | Binding | Consumidor | Qué hace |
 |---|---|---|---|
-| `notificaciones.pedido.queue` | `pedidos.exchange` ← `pedido.*` | ms-clientes | Notifica al cliente (simula correo) |
-| `notificaciones.pago.queue` | `pagos.exchange` ← `pago.aprobado` | ms-clientes | Notifica el pago aprobado |
+| `notificaciones.queue` | `pedidos.exchange` ← `pedido.*` y `pagos.exchange` ← `pago.aprobado` | ms-clientes | Notifica al cliente el pedido y el pago (simula correo) |
 | `inventario.stock.queue` | `pedidos.exchange` ← `pedido.*` | ms-inventario | Alerta si el stock quedó bajo el mínimo |
 | `tickets.pago.queue` | `pagos.exchange` ← `pago.aprobado` | ms-pedidos | Genera el ticket del pedido pagado |
 
 | DLQ | Binding en `dlx.exchange` | Recibe de |
 |---|---|---|
-| `notificaciones.dlq` | `notificaciones.dead` | las 2 colas de notificaciones |
+| `notificaciones.dlq` | `notificaciones.dead` | `notificaciones.queue` |
 | `inventario.dlq` | `inventario.dead` | `inventario.stock.queue` |
 | `tickets.dlq` | `tickets.dead` | `tickets.pago.queue` |
 
 ```
-ms-pedidos --pedido.creado/cancelado--> pedidos.exchange --pedido.*--> notificaciones.pedido.queue (ms-clientes)
-                                                          \--pedido.*--> inventario.stock.queue    (ms-inventario)
-ms-pagos   --pago.aprobado-----------> pagos.exchange   --pago.aprobado--> notificaciones.pago.queue (ms-clientes)
-                                                          \--pago.aprobado--> tickets.pago.queue      (ms-pedidos)
+ms-pedidos --pedido.creado/cancelado--> pedidos.exchange --pedido.*--> notificaciones.queue (ms-clientes)
+                                                          \--pedido.*--> inventario.stock.queue (ms-inventario)
+ms-pagos   --pago.aprobado-----------> pagos.exchange   --pago.aprobado--> notificaciones.queue (ms-clientes)
+                                                          \--pago.aprobado--> tickets.pago.queue (ms-pedidos)
 cola principal --(NACK sin requeue)--> dlx.exchange --> *.dlq
 ```
+
+**Retención:** los mensajes de cada DLQ expiran a las 24 horas (`x-message-ttl`, valor `app.messaging.retention.dlq-ttl-ms`
+en `application.yml`), de modo que la DLQ conserva un historial para analizar los fallos sin crecer sin límite.
+
+> Si ya habías levantado una versión anterior (con `notificaciones.pedido.queue` y `notificaciones.pago.queue`, o DLQ sin TTL),
+> RabbitMQ rechaza redeclarar una cola con argumentos distintos. Bórralas antes (dashboard → Queues → *Delete*, o
+> `DELETE /queues/{name}` del administrador) y reinicia los microservicios.
 
 ## 3. Dónde está cada cosa en el código
 
@@ -114,7 +120,7 @@ al menos una instancia de 4 GB.
 ## 7. Pruebas funcionales
 
 1. **Cluster:** `docker exec rabbitmq-1 rabbitmqctl cluster_status` muestra los 2 nodos; el dashboard (Overview → Nodes) muestra ambos.
-2. **Topología:** dashboard → Exchanges (3) y Queues (4 + 3 DLQ, con `DLX` en las principales).
+2. **Topología:** dashboard → Exchanges (3) y Queues (3 + 3 DLQ, con `DLX` en las principales y `TTL` en las DLQ).
 3. **Flujo feliz:** en la tienda, compra un producto →
    `docker-compose logs ms-pedidos | grep RABBIT` (publicó `PEDIDO_CREADO`),
    `docker-compose logs ms-clientes | grep NOTIFICACION`, `docker-compose logs ms-inventario | grep -E "STOCK"`.

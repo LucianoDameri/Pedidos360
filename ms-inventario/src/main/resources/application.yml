@@ -50,6 +50,8 @@ app:
     queues:
       inventario-stock: inventario.stock.queue
       inventario-dlq: inventario.dlq
+    retention:
+      dlq-ttl-ms: 86400000   # los mensajes de las DLQ se conservan 24 h (guia 2.2.3)
     routing-keys:
       pedido-todos: "pedido.*"
       inventario-dlq: inventario.dead

@@ -49,9 +49,10 @@ app:
       pagos: pagos.exchange
       dlx: dlx.exchange
     queues:
-      notificaciones-pedido: notificaciones.pedido.queue
-      notificaciones-pago: notificaciones.pago.queue
+      notificaciones: notificaciones.queue
       notificaciones-dlq: notificaciones.dlq
+    retention:
+      dlq-ttl-ms: 86400000   # los mensajes de las DLQ se conservan 24 h (guia 2.2.3)
     routing-keys:
       pedido-todos: "pedido.*"
       pago-aprobado: pago.aprobado
