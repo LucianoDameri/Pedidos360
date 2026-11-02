@@ -1,0 +1,34 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: ms-kafka-admin
+  kafka:
+    # Brokers del cluster (en docker-compose: kafka-1:29092,kafka-2:29092)
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
+    client-id: ms-kafka-admin
+    producer:               # solo para POST /kafka/messages (mensajes de prueba)
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        request.timeout.ms: 5000
+        delivery.timeout.ms: 10000
+        max.block.ms: 5000
+    admin:
+      fail-fast: false
+
+azure:
+  activedirectory:
+    tenant-id: ${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}
+    client-id: ${AZURE_CLIENT_ID:f2e886fe-a3b6-46fe-affe-61b4ea743f2a}
+    jwk-set-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}/discovery/v2.0/keys
+    issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}/v2.0
+
+# Parametros del administrador (ver KafkaAdminProperties)
+app:
+  kafka-admin:
+    timeout-ms: 8000              # tiempo maximo de espera de cada operacion contra Kafka
+    default-partitions: 3         # si el POST /kafka/topics no indica particiones
+    default-replication-factor: 2 # si el POST /kafka/topics no indica replicas (el cluster tiene 2 brokers)

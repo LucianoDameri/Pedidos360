@@ -1,0 +1,425 @@
+{
+  "info": {
+    "name": "Pedidos360 - Kafka (ms-analitica y ms-kafka-admin)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Variables: base (http://IP-EC2:8088 para el administrador, :8087 para analitica, o la URL del API Gateway) y token (JWT de Azure AD)."
+  },
+  "variable": [
+    {
+      "key": "base",
+      "value": "http://IP-EC2:8088"
+    },
+    {
+      "key": "token",
+      "value": "PEGA_AQUI_EL_JWT"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Administrador - cluster y topicos",
+      "item": [
+        {
+          "name": "Info del cluster",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/kafka/cluster",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "kafka",
+                "cluster"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar topicos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/kafka/topics",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "kafka",
+                "topics"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detalle de pedidos.eventos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/kafka/topics/pedidos.eventos",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "kafka",
+                "topics",
+                "pedidos.eventos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear topico de prueba",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/kafka/topics",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "kafka",
+                "topics"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"prueba.demo\",\n  \"partitions\": 2,\n  \"replicationFactor\": 2,\n  \"retentionMs\": 3600000,\n  \"cleanupPolicy\": \"delete\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Cambiar configuracion",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/kafka/topics/prueba.demo/config",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "kafka",
+                "topics",
+                "prueba.demo",
+                "config"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"retentionMs\": 7200000\n}"
+            }
+          }
+        },
+        {
+          "name": "Aumentar particiones",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/kafka/topics/prueba.demo/partitions",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "kafka",
+                "topics",
+                "prueba.demo",
+                "partitions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"partitions\": 4\n}"
+            }
+          }
+        },
+        {
+          "name": "Eliminar topico de prueba",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/kafka/topics/prueba.demo",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "kafka",
+                "topics",
+                "prueba.demo"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Administrador - consumer groups y mensajes",
+      "item": [
+        {
+          "name": "Listar consumer groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/kafka/consumer-groups",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "kafka",
+                "consumer-groups"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detalle y lag de analitica-ventas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/kafka/consumer-groups/analitica-ventas",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "kafka",
+                "consumer-groups",
+                "analitica-ventas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Publicar alerta de prueba",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/kafka/messages",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "kafka",
+                "messages"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"inventario.alertas\",\n  \"key\": \"7\",\n  \"payload\": \"{\\\"eventId\\\":\\\"prueba-0001\\\",\\\"tipo\\\":\\\"STOCK_BAJO\\\",\\\"version\\\":1,\\\"productoId\\\":7,\\\"cantidadActual\\\":3,\\\"stockMinimo\\\":5,\\\"ocurridoEn\\\":\\\"2026-11-02T14:36:02\\\"}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Publicar mensaje invalido (va a la DLT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/kafka/messages",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "kafka",
+                "messages"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"pedidos.eventos\",\n  \"key\": \"prueba-dlt\",\n  \"payload\": \"{\\\"esto no es un evento valido\\\"\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Analitica (cambiar base a :8087)",
+      "item": [
+        {
+          "name": "Resumen",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/analitica/resumen",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "analitica",
+                "resumen"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ventas por producto",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/analitica/ventas/productos",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "analitica",
+                "ventas",
+                "productos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mas vendidos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/analitica/ventas/top?limite=5",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "analitica",
+                "ventas",
+                "top"
+              ],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "5"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alertas recientes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/analitica/alertas?limite=10",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "analitica",
+                "alertas"
+              ],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -2,6 +2,7 @@ package cl.duoc.pedidos360.ms_pedidos.service;
 
 import cl.duoc.pedidos360.ms_pedidos.client.ServiciosClient;
 import cl.duoc.pedidos360.ms_pedidos.messaging.publisher.PedidoEventPublisher;
+import cl.duoc.pedidos360.ms_pedidos.messaging.publisher.PedidoKafkaPublisher;
 import cl.duoc.pedidos360.ms_pedidos.model.Pedido;
 import cl.duoc.pedidos360.ms_pedidos.repository.PedidoRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -22,6 +23,7 @@ public class PedidoService {
     private final PedidoRepository repository;
     private final ServiciosClient servicios;
     private final PedidoEventPublisher eventos; // mensajeria asincrona (RabbitMQ)
+    private final PedidoKafkaPublisher kafka;   // flujo de eventos para analitica (Kafka)
 
     public List<Pedido> listar() {
         return repository.findAll();
@@ -68,6 +70,7 @@ public class PedidoService {
         try {
             Pedido guardado = repository.save(pedido);
             eventos.pedidoCreado(guardado); // evento asincrono: notificacion y alerta de stock
+            kafka.publicar("PEDIDO_CREADO", guardado); // stream de eventos (analitica)
             return guardado;
         } catch (RuntimeException e) {
             reponerStock(pedido, auth); // si no se pudo guardar, se devuelve el stock
@@ -78,6 +81,7 @@ public class PedidoService {
     /** Cancelar un pedido pendiente repone el stock. Un pedido pagado no se puede cancelar. */
     public Pedido actualizarEstado(Long id, Pedido.EstadoPedido nuevoEstado, String auth) {
         Pedido pedido = obtener(id);
+        Pedido.EstadoPedido estadoAnterior = pedido.getEstado();
         boolean seCancela = nuevoEstado == Pedido.EstadoPedido.CANCELADO
                 && pedido.getEstado() != Pedido.EstadoPedido.CANCELADO;
         if (seCancela) {
@@ -91,6 +95,10 @@ public class PedidoService {
         Pedido guardado = repository.save(pedido);
         if (seCancela) {
             eventos.pedidoCancelado(guardado);
+        }
+        if (estadoAnterior != nuevoEstado) {
+            // cada cambio de estado queda en el stream: PEDIDO_CONFIRMADO, PEDIDO_CANCELADO, etc.
+            kafka.publicar("PEDIDO_" + nuevoEstado.name(), guardado);
         }
         return guardado;
     }

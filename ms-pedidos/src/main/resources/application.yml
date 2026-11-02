@@ -32,6 +32,28 @@ spring:
         max-concurrency: 3
         default-requeue-rejected: false  # lo rechazado va a la DLQ, no vuelve a la cola
 
+  # ---------------------------------------------------------------------------
+  # Kafka (EP3): cliente productor. Toda la configuracion vive aqui.
+  # ---------------------------------------------------------------------------
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
+    client-id: ms-pedidos
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all                 # el broker confirma cuando las replicas en sincronia recibieron el mensaje
+      retries: 3
+      properties:
+        enable.idempotence: true             # sin duplicados aunque se reintente el envio
+        max.in.flight.requests.per.connection: 5
+        linger.ms: 5
+        request.timeout.ms: 5000
+        delivery.timeout.ms: 10000
+        max.block.ms: 3000                   # si Kafka no responde, la compra no se queda esperando
+        spring.json.add.type.headers: false  # el consumidor tiene su propio DTO: no se envia el tipo Java
+    admin:
+      fail-fast: false                       # si Kafka tarda en estar listo, la app igual arranca
+
 azure:
   activedirectory:
     tenant-id: ${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}
@@ -65,3 +87,16 @@ app:
       pedido-cancelado: pedido.cancelado
       pago-aprobado: pago.aprobado
       tickets-dlq: tickets.dead
+
+  # ---------------------------------------------------------------------------
+  # Kafka: topico que produce este servicio (ver docs/KAFKA.md)
+  # ---------------------------------------------------------------------------
+  kafka:
+    topics:
+      pedidos-eventos:
+        name: pedidos.eventos
+        partitions: 3
+        replicas: 2
+        retention-ms: 604800000     # 7 dias
+        cleanup-policy: delete
+        min-insync-replicas: 1

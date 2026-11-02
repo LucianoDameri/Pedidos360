@@ -2,7 +2,8 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
-import { forkJoin, Subscription, timer } from 'rxjs';
+import { forkJoin, of, Subscription, timer } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { RecursoService } from '../../services/recurso.service';
 import { CarritoService } from '../../services/carrito.service';
 import { FotoProductoComponent } from '../foto-producto/foto-producto.component';
@@ -90,6 +91,30 @@ import { descuento } from '../../producto.util';
         </div>
       </section>
 
+      <!-- Más vendidos (calculado por ms-analitica a partir de los eventos Kafka) -->
+      <section class="seccion" *ngIf="masVendidos.length > 0">
+        <header class="seccion-cabecera">
+          <h2>Los más vendidos</h2>
+          <a routerLink="/tienda">Ver el catálogo</a>
+        </header>
+        <div class="grilla">
+          <article class="tarjeta" *ngFor="let p of masVendidos">
+            <div class="foto">
+              <app-foto-producto [producto]="p"></app-foto-producto>
+            </div>
+            <span class="categoria">{{ p.categoria }}</span>
+            <h3>{{ p.nombre }}</h3>
+            <div class="precios">
+              <strong>{{ p.precio | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong>
+            </div>
+            <p class="stock">{{ p.vendidas }} {{ p.vendidas === 1 ? 'unidad vendida' : 'unidades vendidas' }}</p>
+            <button class="btn-agregar chico" (click)="agregar(p)" [disabled]="disponible(p) === 0">
+              {{ agregado === p.id ? 'Agregado' : (disponible(p) === 0 ? 'Sin stock' : 'Agregar') }}
+            </button>
+          </article>
+        </div>
+      </section>
+
       <section class="pasos">
         <h2>Así funciona tu compra</h2>
         <ol>
@@ -136,6 +161,7 @@ import { descuento } from '../../producto.util';
             <a routerLink="/clientes">Clientes</a>
             <a routerLink="/productos">Productos</a>
             <a routerLink="/inventario">Inventario</a>
+            <a routerLink="/analitica">Analítica</a>
           </div>
         </div>
       </section>
@@ -216,6 +242,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   nombre = '';
   productos: any[] = [];
   stock: Record<number, number> = {};
+  masVendidos: any[] = [];
   cargando = true;
   sinConexion = false;
   agregado: number | null = null;
@@ -285,13 +312,22 @@ export class HomeComponent implements OnInit, OnDestroy {
   private cargar(): void {
     forkJoin({
       productos: this.api.listar('productos'),
-      inventario: this.api.listar('inventario')
+      inventario: this.api.listar('inventario'),
+      // Si ms-analitica no responde, el resto del inicio sigue funcionando
+      top: this.api.listar('analitica/ventas/top?limite=4').pipe(catchError(() => of([] as any[])))
     }).subscribe({
       next: (r) => {
         this.productos = r.productos.filter((p) => p.activo);
         const stock: Record<number, number> = {};
         r.inventario.forEach((s) => (stock[s.productoId] = s.cantidad));
         this.stock = stock;
+        this.masVendidos = r.top
+          .filter((v) => v.unidadesVendidas > 0)
+          .map((v) => {
+            const prod = this.productos.find((p) => p.id === v.productoId);
+            return prod ? { ...prod, vendidas: v.unidadesVendidas } : null;
+          })
+          .filter((p) => p !== null);
         this.cargando = false;
         this.sinConexion = false;
       },
