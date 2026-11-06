@@ -21,6 +21,11 @@ export class RecursoService {
     return this.http.get<any[]>(this.url(path));
   }
 
+  /** GET de un recurso que no es una lista (un resumen, un detalle...). */
+  obtener(path: string): Observable<any> {
+    return this.http.get<any>(this.url(path));
+  }
+
   crear(path: string, body: any): Observable<any> {
     return this.http.post<any>(this.url(path), body);
   }

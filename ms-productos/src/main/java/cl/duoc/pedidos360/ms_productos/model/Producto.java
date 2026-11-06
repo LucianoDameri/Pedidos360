@@ -33,5 +33,13 @@ public class Producto {
     @NotBlank(message = "La categoría es obligatoria")
     private String categoria;
 
+    // Oferta: precio habitual antes del descuento. El que se cobra siempre es "precio".
+    @Positive(message = "El precio anterior debe ser mayor a 0")
+    @Column(name = "precio_anterior")
+    private BigDecimal precioAnterior;
+
+    // Foto del producto (URL). Si va vacía, el frontend busca assets/productos/{id}.jpg.
+    private String imagenUrl;
+
     private boolean activo = true;
 }

@@ -14,7 +14,7 @@ import { ClienteActualService } from '../../services/cliente-actual.service';
   template: `
     <div class="pedidos">
       <div class="header">
-        <h2>🧾 Mis pedidos</h2>
+        <h2>Mis pedidos</h2>
         <div class="comprador" *ngIf="clientes.length > 0">
           <label>Cliente:</label>
           <select [(ngModel)]="clienteId" (ngModelChange)="cambiarCliente()">
@@ -23,8 +23,8 @@ import { ClienteActualService } from '../../services/cliente-actual.service';
         </div>
       </div>
 
-      <div class="alert-error" *ngIf="error">⚠️ {{ error }}</div>
-      <div class="alert-ok" *ngIf="mensaje">✅ {{ mensaje }}</div>
+      <div class="alert-error" *ngIf="error">{{ error }}</div>
+      <div class="alert-ok" *ngIf="mensaje">{{ mensaje }}</div>
       <div class="loading" *ngIf="cargando">Cargando pedidos...</div>
 
       <div class="table-wrapper" *ngIf="!cargando">

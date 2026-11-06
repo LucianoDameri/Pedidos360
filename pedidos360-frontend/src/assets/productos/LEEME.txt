@@ -1,0 +1,24 @@
+Fotos de los productos
+======================
+
+Cada producto busca su foto en esta carpeta con el nombre {id}.jpg
+(si el producto tiene "URL de la foto" en el admin, usa esa en su lugar).
+Mientras no exista la foto, la tienda muestra un recuadro con las iniciales.
+
+Catálogo inicial (docs/seed-catalogo.sql):
+
+  1.jpg   Notebook Lenovo IdeaPad 15
+  2.jpg   Mouse inalámbrico Logitech M170
+  3.jpg   Teclado mecánico Redragon
+  4.jpg   Monitor Samsung 24" Full HD
+  5.jpg   Audífonos Sony WH-CH520
+  6.jpg   Parlante JBL Flip 6
+  7.jpg   Smartphone Samsung Galaxy A15
+  8.jpg   Cargador rápido 25W USB-C
+  9.jpg   Webcam Logitech C920
+  10.jpg  Disco SSD Kingston 1 TB
+  11.jpg  Tablet Lenovo Tab M10
+  12.jpg  Silla gamer ergonómica
+
+Recomendado: formato 4:3 (por ejemplo 800x600), menos de 200 KB cada una.
+Usa solo fotos que puedas usar (propias o con licencia libre).

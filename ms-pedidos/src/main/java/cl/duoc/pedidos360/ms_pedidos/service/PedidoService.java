@@ -1,6 +1,8 @@
 package cl.duoc.pedidos360.ms_pedidos.service;
 
 import cl.duoc.pedidos360.ms_pedidos.client.ServiciosClient;
+import cl.duoc.pedidos360.ms_pedidos.messaging.publisher.PedidoEventPublisher;
+import cl.duoc.pedidos360.ms_pedidos.messaging.publisher.PedidoKafkaPublisher;
 import cl.duoc.pedidos360.ms_pedidos.model.Pedido;
 import cl.duoc.pedidos360.ms_pedidos.repository.PedidoRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -20,6 +22,8 @@ public class PedidoService {
 
     private final PedidoRepository repository;
     private final ServiciosClient servicios;
+    private final PedidoEventPublisher eventos; // mensajeria asincrona (RabbitMQ)
+    private final PedidoKafkaPublisher kafka;   // flujo de eventos para analitica (Kafka)
 
     public List<Pedido> listar() {
         return repository.findAll();
@@ -64,7 +68,10 @@ public class PedidoService {
         pedido.setFechaCreacion(LocalDateTime.now());
         pedido.setTotal(precio.multiply(BigDecimal.valueOf(pedido.getCantidad())));
         try {
-            return repository.save(pedido);
+            Pedido guardado = repository.save(pedido);
+            eventos.pedidoCreado(guardado); // evento asincrono: notificacion y alerta de stock
+            kafka.publicar("PEDIDO_CREADO", guardado); // stream de eventos (analitica)
+            return guardado;
         } catch (RuntimeException e) {
             reponerStock(pedido, auth); // si no se pudo guardar, se devuelve el stock
             throw e;
@@ -74,8 +81,10 @@ public class PedidoService {
     /** Cancelar un pedido pendiente repone el stock. Un pedido pagado no se puede cancelar. */
     public Pedido actualizarEstado(Long id, Pedido.EstadoPedido nuevoEstado, String auth) {
         Pedido pedido = obtener(id);
-        if (nuevoEstado == Pedido.EstadoPedido.CANCELADO
-                && pedido.getEstado() != Pedido.EstadoPedido.CANCELADO) {
+        Pedido.EstadoPedido estadoAnterior = pedido.getEstado();
+        boolean seCancela = nuevoEstado == Pedido.EstadoPedido.CANCELADO
+                && pedido.getEstado() != Pedido.EstadoPedido.CANCELADO;
+        if (seCancela) {
             if (pedido.getEstado() != Pedido.EstadoPedido.PENDIENTE) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT,
                         "Solo se puede cancelar un pedido pendiente de pago");
@@ -83,7 +92,15 @@ public class PedidoService {
             servicios.ajustarStock(pedido.getProductoId(), pedido.getCantidad(), auth);
         }
         pedido.setEstado(nuevoEstado);
-        return repository.save(pedido);
+        Pedido guardado = repository.save(pedido);
+        if (seCancela) {
+            eventos.pedidoCancelado(guardado);
+        }
+        if (estadoAnterior != nuevoEstado) {
+            // cada cambio de estado queda en el stream: PEDIDO_CONFIRMADO, PEDIDO_CANCELADO, etc.
+            kafka.publicar("PEDIDO_" + nuevoEstado.name(), guardado);
+        }
+        return guardado;
     }
 
     /** Solo se permite cambiar la dirección de entrega (producto y cantidad afectan el stock). */

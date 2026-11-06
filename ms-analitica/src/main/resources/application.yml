@@ -1,0 +1,81 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: ms-analitica
+  datasource:
+    url: jdbc:mysql://localhost:3306/pedidos360_analitica?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  # ---------------------------------------------------------------------------
+  # Kafka (EP3): cliente consumidor. Toda la configuracion vive aqui.
+  # ---------------------------------------------------------------------------
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
+    client-id: ms-analitica
+    consumer:
+      group-id: analitica-ventas      # grupo por defecto; cada @KafkaListener declara el suyo
+      auto-offset-reset: earliest     # un grupo nuevo lee el topico desde el principio
+      enable-auto-commit: false       # el offset se confirma a mano, despues de procesar el mensaje
+      max-poll-records: 50
+      # ErrorHandlingDeserializer: un JSON roto no tumba el consumidor, llega al manejador de errores
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.use.type.headers: false      # el DTO destino lo fija cada @KafkaListener
+        spring.json.trusted.packages: cl.duoc.pedidos360.ms_analitica.messaging.dto
+        session.timeout.ms: 30000                # si no hay latidos en 30 s, el miembro sale del grupo
+        heartbeat.interval.ms: 10000
+        max.poll.interval.ms: 300000
+        metadata.max.age.ms: 30000               # detecta topicos creados despues del arranque
+        partition.assignment.strategy: org.apache.kafka.clients.consumer.CooperativeStickyAssignor
+    listener:
+      ack-mode: manual_immediate      # acknowledgment.acknowledge() confirma el offset al instante
+      concurrency: 3                  # hilos consumidores por @KafkaListener (maximo = particiones)
+      missing-topics-fatal: false     # no abortar si el topico aun no existe
+    admin:
+      fail-fast: false
+
+azure:
+  activedirectory:
+    tenant-id: ${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}
+    client-id: ${AZURE_CLIENT_ID:f2e886fe-a3b6-46fe-affe-61b4ea743f2a}
+    jwk-set-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}/discovery/v2.0/keys
+    issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df}/v2.0
+
+# ---------------------------------------------------------------------------
+# Kafka: topicos que se consumen, consumer groups y politica de errores (ver docs/KAFKA.md)
+# ---------------------------------------------------------------------------
+app:
+  kafka:
+    topics:
+      pedidos-eventos:
+        name: pedidos.eventos
+      inventario-alertas:
+        name: inventario.alertas
+    groups:
+      ventas: analitica-ventas          # metricas de ventas (lee pedidos.eventos)
+      reposicion: analitica-reposicion  # alertas de reposicion (lee inventario.alertas)
+    concurrency:
+      ventas: 3        # pedidos.eventos tiene 3 particiones: 1 hilo por particion
+      reposicion: 2    # inventario.alertas tiene 2 particiones
+    retry:
+      attempts: 3      # reintentos antes de enviar el mensaje a la DLT
+      interval-ms: 1000
+    dlt:               # Dead Letter Topics: <topico>.DLT
+      suffix: .DLT
+      partitions: 1
+      replicas: 2
+      retention-ms: 1209600000   # 14 dias

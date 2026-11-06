@@ -14,7 +14,6 @@ export interface Campo {
 export interface RecursoConfig {
   path: string;
   titulo: string;
-  icono: string;
   singular: string;
   editable: boolean; // false si el microservicio no tiene PUT /{id}
   campos: Campo[];
@@ -22,17 +21,19 @@ export interface RecursoConfig {
 
 export const RECURSOS: Record<string, RecursoConfig> = {
   productos: {
-    path: 'productos', titulo: 'Productos', icono: '📦', singular: 'producto', editable: true,
+    path: 'productos', titulo: 'Productos', singular: 'producto', editable: true,
     campos: [
       { clave: 'nombre', etiqueta: 'Nombre', tipo: 'text', requerido: true },
       { clave: 'descripcion', etiqueta: 'Descripción', tipo: 'text' },
       { clave: 'precio', etiqueta: 'Precio', tipo: 'number', requerido: true },
       { clave: 'categoria', etiqueta: 'Categoría', tipo: 'text', requerido: true },
+      { clave: 'precioAnterior', etiqueta: 'Precio anterior (oferta)', tipo: 'number' },
+      { clave: 'imagenUrl', etiqueta: 'URL de la foto', tipo: 'text' },
       { clave: 'activo', etiqueta: 'Activo', tipo: 'checkbox', defecto: true }
     ]
   },
   inventario: {
-    path: 'inventario', titulo: 'Inventario', icono: '🏭', singular: 'registro de stock', editable: true,
+    path: 'inventario', titulo: 'Inventario', singular: 'registro de stock', editable: true,
     campos: [
       { clave: 'productoId', etiqueta: 'ID Producto', tipo: 'number', requerido: true },
       { clave: 'cantidad', etiqueta: 'Cantidad', tipo: 'number', requerido: true },
