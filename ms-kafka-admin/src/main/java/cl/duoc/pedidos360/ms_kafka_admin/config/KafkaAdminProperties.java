@@ -17,5 +17,5 @@ public class KafkaAdminProperties {
     private int defaultPartitions = 3;
 
     /** Factor de replicacion por defecto al crear un topico. */
-    private short defaultReplicationFactor = 2;
+    private short defaultReplicationFactor = 3;
 }

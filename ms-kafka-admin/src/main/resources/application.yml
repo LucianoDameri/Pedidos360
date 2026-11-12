@@ -5,7 +5,7 @@ spring:
   application:
     name: ms-kafka-admin
   kafka:
-    # Brokers del cluster (en docker-compose: kafka-1:29092,kafka-2:29092)
+    # Brokers del cluster (en docker-compose: kafka-1:29092,kafka-2:29092,kafka-3:29092)
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
     client-id: ms-kafka-admin
     producer:               # solo para POST /kafka/messages (mensajes de prueba)
@@ -31,4 +31,4 @@ app:
   kafka-admin:
     timeout-ms: 8000              # tiempo maximo de espera de cada operacion contra Kafka
     default-partitions: 3         # si el POST /kafka/topics no indica particiones
-    default-replication-factor: 2 # si el POST /kafka/topics no indica replicas (el cluster tiene 2 brokers)
+    default-replication-factor: 3 # si el POST /kafka/topics no indica replicas (el cluster tiene 3 brokers)

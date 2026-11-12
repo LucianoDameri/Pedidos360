@@ -90,15 +90,16 @@ Salida (`GET /analitica/alertas?limite=10`):
 
 | Tópico | Particiones | Réplicas | Retención | Cleanup | min.insync.replicas |
 |---|---|---|---|---|---|
-| `pedidos.eventos` | 3 | 2 | 7 días | delete | 1 |
-| `inventario.alertas` | 2 | 2 | 30 días | compact,delete | 1 |
-| `pedidos.eventos.DLT` | 1 | 2 | 14 días | delete | 1 |
-| `inventario.alertas.DLT` | 1 | 2 | 14 días | delete | 1 |
+| `pedidos.eventos` | 3 | 3 | 7 días | delete | 2 |
+| `inventario.alertas` | 3 | 3 | 30 días | compact,delete | 2 |
+| `pedidos.eventos.DLT` | 1 | 3 | 14 días | delete | 2 |
+| `inventario.alertas.DLT` | 1 | 3 | 14 días | delete | 2 |
 
 - Los tópicos se crean al arrancar los servicios (beans `NewTopic`) y también con `bash kafka/scripts/crear-topicos.sh`. Ambos usan los mismos valores.
+- Para cambiar las réplicas de un tópico que ya existe: detener los servicios que usan Kafka y ejecutar `bash kafka/scripts/recrear-topicos.sh` (borra y vuelve a crear los tópicos).
 - El clúster tiene `auto.create.topics.enable=false`: un tópico mal escrito falla en vez de crearse solo.
 - `inventario.alertas` es `compact,delete`: Kafka conserva al menos el último mensaje por producto.
-- Productores: `acks=all` e idempotencia activa. Con 2 brokers y `min.insync.replicas=1` el sistema sigue funcionando si cae uno.
+- Productores: `acks=all` e idempotencia activa. Con 3 brokers, 3 réplicas y `min.insync.replicas=2` el sistema sigue leyendo y escribiendo si cae un broker.
 
 ## 4. Consumer groups
 
@@ -125,6 +126,7 @@ Prueba rápida: `bash kafka/scripts/probar-dlt.sh` publica un mensaje inválido 
 | Zookeeper | 2181 (interno) | Coordinación del clúster |
 | `kafka-1` | 9092 | Broker 1 (listener externo para el host) |
 | `kafka-2` | 9093 | Broker 2 |
+| `kafka-3` | 9094 | Broker 3 |
 | Kafka UI | 8090 | Tópicos, mensajes, consumer groups y métricas (JMX) |
 | `ms-analitica` | 8087 | Consumidor + API de analítica |
 | `ms-kafka-admin` | 8088 | Administrador de Kafka por REST |

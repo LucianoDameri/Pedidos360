@@ -6,7 +6,7 @@
 set -euo pipefail
 
 BROKER_CONTAINER="${BROKER_CONTAINER:-kafka-1}"
-BOOTSTRAP="${BOOTSTRAP:-kafka-1:29092,kafka-2:29092}"
+BOOTSTRAP="${BOOTSTRAP:-kafka-1:29092,kafka-2:29092,kafka-3:29092}"
 
 kt()  { docker exec "$BROKER_CONTAINER" kafka-topics  --bootstrap-server "$BOOTSTRAP" "$@"; }
 kcf() { docker exec "$BROKER_CONTAINER" kafka-configs --bootstrap-server "$BOOTSTRAP" "$@"; }
@@ -23,10 +23,10 @@ crear_topico() {
 }
 
 #                nombre                    part  repl  retention.ms   cleanup         min.isr
-crear_topico "pedidos.eventos"            3     2     604800000      delete          1   # 7 dias
-crear_topico "inventario.alertas"         2     2     2592000000     "compact,delete" 1  # 30 dias, ultimo estado por producto
-crear_topico "pedidos.eventos.DLT"        1     2     1209600000     delete          1   # 14 dias
-crear_topico "inventario.alertas.DLT"     1     2     1209600000     delete          1   # 14 dias
+crear_topico "pedidos.eventos"            3     3     604800000      delete          2   # 7 dias
+crear_topico "inventario.alertas"         3     3     2592000000     "compact,delete" 2  # 30 dias, ultimo estado por producto
+crear_topico "pedidos.eventos.DLT"        1     3     1209600000     delete          2   # 14 dias
+crear_topico "inventario.alertas.DLT"     1     3     1209600000     delete          2   # 14 dias
 
 echo
 echo "Topicos actuales:"

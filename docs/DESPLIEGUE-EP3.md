@@ -11,7 +11,7 @@ docker-compose ps
 ```
 
 No usar `docker-compose down -v`. Si la EC2 se queda sin memoria al construir, levantar primero Zookeeper y Kafka
-(`docker-compose up -d zookeeper kafka-1 kafka-2 kafka-ui`) y después los servicios nuevos; revisar con `free -m`.
+(`docker-compose up -d zookeeper kafka-1 kafka-2 kafka-3 kafka-ui`) y después los servicios nuevos; revisar con `free -m`.
 
 Frontend: `cd pedidos360-frontend && npm install && ng build` o `ng serve` según lo acordado en EP2.
 
@@ -40,7 +40,7 @@ Desplegar el stage. Con eso el frontend (inicio y `/analitica`) consume ambos se
 | 4 | Crear y pagar un pedido en el frontend | Captura de "Mis pedidos" |
 | 5 | Kafka UI: Topics -> `pedidos.eventos` -> Messages con los eventos del pedido | Captura |
 | 6 | Kafka UI: Consumers -> `analitica-ventas` Stable, lag 0 | Captura |
-| 7 | Kafka UI: Brokers (2 brokers, métricas JMX) y Topics (particiones, réplicas) | Captura |
+| 7 | Kafka UI: Brokers (3 brokers, métricas JMX) y Topics (particiones, réplicas) | Captura |
 | 8 | Frontend: "Los más vendidos" en el inicio y página `/analitica` | Captura |
 | 9 | Alerta de stock: provocar `STOCK_BAJO` y verla en `inventario.alertas` y en `/analitica` | Captura |
 | 10 | DLT: `bash kafka/scripts/probar-dlt.sh` y mensaje en `pedidos.eventos.DLT` | Captura |

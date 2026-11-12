@@ -8,7 +8,7 @@
 set -euo pipefail
 
 BROKER_CONTAINER="${BROKER_CONTAINER:-kafka-1}"
-BOOTSTRAP="${BOOTSTRAP:-kafka-1:29092,kafka-2:29092}"
+BOOTSTRAP="${BOOTSTRAP:-kafka-1:29092,kafka-2:29092,kafka-3:29092}"
 
 if [ "${1:-}" = "leer" ]; then
   echo ">> Mensajes en pedidos.eventos.DLT (Ctrl+C para salir)"
