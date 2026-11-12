@@ -85,8 +85,8 @@ app:
     topics:
       inventario-alertas:
         name: inventario.alertas
-        partitions: 2
-        replicas: 2
+        partitions: 3
+        replicas: 3
         retention-ms: 2592000000    # 30 dias
         cleanup-policy: compact,delete   # conserva la ultima alerta por producto (clave = productoId)
-        min-insync-replicas: 1
+        min-insync-replicas: 2

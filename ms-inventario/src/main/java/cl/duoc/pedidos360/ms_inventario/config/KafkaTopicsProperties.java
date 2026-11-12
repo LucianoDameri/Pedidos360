@@ -27,12 +27,12 @@ public class KafkaTopicsProperties {
         /** Particiones: definen el paralelismo maximo de los consumidores de un grupo. */
         private int partitions = 2;
         /** Factor de replicacion (copias de cada particion en distintos brokers). */
-        private int replicas = 2;
+        private int replicas = 3;
         /** Tiempo que Kafka conserva los mensajes (ms). */
         private long retentionMs = 2592000000L;
         /** delete (borra por antiguedad), compact (deja el ultimo valor por clave) o ambos. */
         private String cleanupPolicy = "compact,delete";
         /** Replicas que deben confirmar una escritura con acks=all. */
-        private int minInsyncReplicas = 1;
+        private int minInsyncReplicas = 2;
     }
 }

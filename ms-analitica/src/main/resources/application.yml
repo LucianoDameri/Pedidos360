@@ -70,12 +70,12 @@ app:
       reposicion: analitica-reposicion  # alertas de reposicion (lee inventario.alertas)
     concurrency:
       ventas: 3        # pedidos.eventos tiene 3 particiones: 1 hilo por particion
-      reposicion: 2    # inventario.alertas tiene 2 particiones
+      reposicion: 2    # inventario.alertas tiene 3 particiones: un hilo atiende 2 y el otro 1
     retry:
       attempts: 3      # reintentos antes de enviar el mensaje a la DLT
       interval-ms: 1000
     dlt:               # Dead Letter Topics: <topico>.DLT
       suffix: .DLT
       partitions: 1
-      replicas: 2
+      replicas: 3
       retention-ms: 1209600000   # 14 dias

@@ -84,7 +84,7 @@ services:
       CLIENTES_URL: http://ms-clientes:8081
       PRODUCTOS_URL: http://ms-productos:8082
       INVENTARIO_URL: http://ms-inventario:8084
-      KAFKA_BOOTSTRAP_SERVERS: kafka-1:29092,kafka-2:29092
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:29092,kafka-2:29092,kafka-3:29092
     depends_on:
       mysql:
         condition: service_healthy
@@ -93,6 +93,8 @@ services:
       kafka-1:
         condition: service_healthy
       kafka-2:
+        condition: service_healthy
+      kafka-3:
         condition: service_healthy
     networks:
       - pedidos360-net
@@ -113,7 +115,7 @@ services:
       RABBITMQ_ADDRESSES: rabbitmq-1:5672,rabbitmq-2:5672
       RABBITMQ_USER: admin
       RABBITMQ_PASS: admin123
-      KAFKA_BOOTSTRAP_SERVERS: kafka-1:29092,kafka-2:29092
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:29092,kafka-2:29092,kafka-3:29092
     depends_on:
       mysql:
         condition: service_healthy
@@ -122,6 +124,8 @@ services:
       kafka-1:
         condition: service_healthy
       kafka-2:
+        condition: service_healthy
+      kafka-3:
         condition: service_healthy
     networks:
       - pedidos360-net
@@ -266,7 +270,7 @@ services:
   # KAFKA (EP3): Zookeeper + 2 brokers + Kafka UI. Convive con RabbitMQ: no
   # comparten red de mensajeria ni puertos y ningun servicio de RabbitMQ cambia.
   #   - Puertos 9092 / 9093: acceso desde la maquina anfitriona (solo desarrollo).
-  #   - Entre contenedores se usa kafka-1:29092 y kafka-2:29092.
+  #   - Entre contenedores se usa kafka-1:29092, kafka-2:29092 y kafka-3:29092.
   # ===========================================================================
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.3
@@ -373,6 +377,47 @@ services:
     networks:
       - pedidos360-net
 
+  kafka-3:
+    image: confluentinc/cp-kafka:7.5.3
+    container_name: kafka-3
+    hostname: kafka-3
+    restart: always
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9094:9094"     # acceso desde el anfitrion (desarrollo)
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:29092,EXTERNAL://${KAFKA_EXTERNAL_HOST:-localhost}:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 2
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
+      KAFKA_JMX_PORT: 9997
+      KAFKA_JMX_HOSTNAME: kafka-3
+    volumes:
+      - kafka_data_3:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server kafka-3:29092 > /dev/null 2>&1"]
+      interval: 20s
+      timeout: 15s
+      retries: 10
+      start_period: 40s
+    networks:
+      - pedidos360-net
+
   kafka-ui:
     image: provectuslabs/kafka-ui:v0.7.2
     container_name: kafka-ui
@@ -382,11 +427,13 @@ services:
         condition: service_healthy
       kafka-2:
         condition: service_healthy
+      kafka-3:
+        condition: service_healthy
     ports:
       - "8090:8080"     # Kafka UI: http://<host>:8090
     environment:
       KAFKA_CLUSTERS_0_NAME: pedidos360
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:29092,kafka-2:29092
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:29092,kafka-2:29092,kafka-3:29092
       KAFKA_CLUSTERS_0_METRICS_PORT: 9997
       DYNAMIC_CONFIG_ENABLED: "false"
       # Acceso con usuario y clave (igual que el dashboard de RabbitMQ)
@@ -409,13 +456,15 @@ services:
       SPRING_DATASOURCE_PASSWORD: root
       AZURE_TENANT_ID: 37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df
       AZURE_CLIENT_ID: f2e886fe-a3b6-46fe-affe-61b4ea743f2a
-      KAFKA_BOOTSTRAP_SERVERS: kafka-1:29092,kafka-2:29092
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:29092,kafka-2:29092,kafka-3:29092
     depends_on:
       mysql:
         condition: service_healthy
       kafka-1:
         condition: service_healthy
       kafka-2:
+        condition: service_healthy
+      kafka-3:
         condition: service_healthy
     networks:
       - pedidos360-net
@@ -430,11 +479,13 @@ services:
       APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST}
       AZURE_TENANT_ID: 37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df
       AZURE_CLIENT_ID: f2e886fe-a3b6-46fe-affe-61b4ea743f2a
-      KAFKA_BOOTSTRAP_SERVERS: kafka-1:29092,kafka-2:29092
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:29092,kafka-2:29092,kafka-3:29092
     depends_on:
       kafka-1:
         condition: service_healthy
       kafka-2:
+        condition: service_healthy
+      kafka-3:
         condition: service_healthy
     networks:
       - pedidos360-net
@@ -447,6 +498,7 @@ volumes:
   zookeeper_log:
   kafka_data_1:
   kafka_data_2:
+  kafka_data_3:
   caddy_data:
   caddy_config:
 

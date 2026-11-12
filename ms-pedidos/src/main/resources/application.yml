@@ -96,7 +96,7 @@ app:
       pedidos-eventos:
         name: pedidos.eventos
         partitions: 3
-        replicas: 2
+        replicas: 3
         retention-ms: 604800000     # 7 dias
         cleanup-policy: delete
-        min-insync-replicas: 1
+        min-insync-replicas: 2

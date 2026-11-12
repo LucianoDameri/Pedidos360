@@ -4,7 +4,7 @@
 set -euo pipefail
 
 BROKER_CONTAINER="${BROKER_CONTAINER:-kafka-1}"
-BOOTSTRAP="${BOOTSTRAP:-kafka-1:29092,kafka-2:29092}"
+BOOTSTRAP="${BOOTSTRAP:-kafka-1:29092,kafka-2:29092,kafka-3:29092}"
 
 kcg() { docker exec "$BROKER_CONTAINER" kafka-consumer-groups --bootstrap-server "$BOOTSTRAP" "$@"; }
 

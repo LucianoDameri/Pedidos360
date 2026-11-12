@@ -19,7 +19,7 @@ API Gateway en AWS y mensajería asíncrona con RabbitMQ y Kafka.
 | `ms-kafka-admin` | 8088 | Administrador de Kafka (tópicos, consumer groups, mensajes por REST) |
 | MySQL | 3306 | Una base de datos por microservicio |
 | RabbitMQ | 5672 / 15672, 5673 / 15673 | Clúster de 2 nodos (`rabbitmq-1`, `rabbitmq-2`) |
-| Kafka | 9092, 9093 | 2 brokers (`kafka-1`, `kafka-2`) con Zookeeper |
+| Kafka | 9092, 9093, 9094 | 3 brokers (`kafka-1`, `kafka-2`, `kafka-3`) con Zookeeper |
 | Kafka UI | 8090 | Tópicos, mensajes, consumer groups y métricas |
 
 Todas las llamadas del frontend pasan por el API Gateway de AWS, que valida el JWT; los microservicios lo validan de nuevo.
@@ -51,8 +51,8 @@ Colección de Postman: `docs/Pedidos360-RabbitMQ.postman_collection.json`.
 
 | Tópico | Productor | Consumidor (grupo) |
 |---|---|---|
-| `pedidos.eventos` (3 particiones, clave `pedidoId`) | ms-pedidos | ms-analitica (`analitica-ventas`) |
-| `inventario.alertas` (2 particiones, clave `productoId`) | ms-inventario | ms-analitica (`analitica-reposicion`) |
+| `pedidos.eventos` (3 particiones, 3 réplicas, clave `pedidoId`) | ms-pedidos | ms-analitica (`analitica-ventas`) |
+| `inventario.alertas` (3 particiones, clave `productoId`) | ms-inventario | ms-analitica (`analitica-reposicion`) |
 
 Cada tópico tiene su DLT (`<tópico>.DLT`). Casos de uso, modelo de mensajes JSON, parámetros, errores y pruebas:
 [docs/KAFKA.md](docs/KAFKA.md). Scripts de administración: `kafka/scripts/`. Postman: `docs/Pedidos360-Kafka.postman_collection.json`.
