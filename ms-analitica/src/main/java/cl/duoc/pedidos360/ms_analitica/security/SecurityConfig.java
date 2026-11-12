@@ -37,6 +37,10 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    @Value("${app.cors-origins:http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com}")
+    private String corsOrigins;
+
+
     @Value("${azure.activedirectory.tenant-id}")
     private String tenantId;
 
@@ -127,10 +131,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-            "http://localhost:4200",
-            "https://v40douxdrf.execute-api.us-east-1.amazonaws.com"
-        ));
+        configuration.setAllowedOrigins(List.of(corsOrigins.split(",")));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
