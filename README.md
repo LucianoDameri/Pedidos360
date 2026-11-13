@@ -69,7 +69,7 @@ Kafka UI: `http://<IP-EC2>:8090` (usuario y clave en el servicio `kafka-ui` del 
 en una EC2 pequeña conviene agregar swap o levantar por partes. Nunca usar `docker-compose down -v` (borra las bases de datos).
 
 Los dos nodos comparten la cookie de Erlang (`RABBITMQ_ERLANG_COOKIE`) y se unen por la lista fija de
-`rabbitmq/rabbitmq.conf`. Con el clúster arriba, se aplica una vez la política de alta disponibilidad:
+`rabbitmq/rabbitmq.conf`. La política de alta disponibilidad (`ha-pedidos360`) la crea sola el servicio de un solo uso `rabbitmq-politica`. Para aplicarla a mano o comprobarla:
 
 ```bash
 docker exec rabbitmq-1 rabbitmqctl set_policy ha-pedidos360 "^(notificaciones|inventario|tickets)\." '{"ha-mode":"all","ha-sync-mode":"automatic"}' --apply-to queues
@@ -77,6 +77,25 @@ docker exec rabbitmq-1 rabbitmqctl cluster_status
 ```
 
 Dashboard: `http://<IP-EC2>:15672` (nodo 1) y `:15673` (nodo 2). Frontend: `cd pedidos360-frontend && npm install && ng serve`.
+
+## Probarlo en cualquier máquina
+
+Hay tres formas, de la más simple a la más completa. En todas el login es Azure AD y los datos vienen
+del API Gateway en la nube, por lo que **la EC2 debe estar encendida** (Learner Lab activo).
+
+1. **URL pública (no requiere instalar nada):** `https://34-227-91-156.sslip.io`.
+2. **Solo el frontend con Docker** (no requiere Node ni Angular):
+   ```bash
+   docker-compose -f docker-compose.frontend.yml up -d --build
+   ```
+   Abrir `http://localhost:4200`. Para detenerlo: `docker-compose -f docker-compose.frontend.yml down`.
+3. **Frontend con Node 18+:** `cd pedidos360-frontend && npm ci && npx ng serve` y abrir `http://localhost:4200`.
+
+Importante: los únicos orígenes registrados en Azure AD (Redirect URI) y en el CORS del API Gateway son
+`http://localhost:4200` y `https://34-227-91-156.sslip.io`. Otro puerto o dominio será rechazado.
+
+El stack completo (backend, MySQL, RabbitMQ y Kafka con `docker-compose up --build -d`) no necesita archivo `.env`
+(ver `.env.example`) y requiere una máquina con varios GB de RAM libres.
 
 ## Puertos del Security Group (EC2)
 

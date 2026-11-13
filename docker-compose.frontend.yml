@@ -1,0 +1,13 @@
+# Solo el frontend, para probarlo en cualquier maquina con Docker:
+#   docker-compose -f docker-compose.frontend.yml up -d --build
+# Queda en http://localhost:4200 (origen registrado en Azure AD y en el CORS del API Gateway).
+# Los datos salen del API Gateway en la nube, por eso la EC2 debe estar encendida.
+version: "3.8"
+
+services:
+  frontend-local:
+    build: ./pedidos360-frontend
+    container_name: pedidos360-frontend-local
+    restart: unless-stopped
+    ports:
+      - "4200:80"

@@ -29,7 +29,7 @@ services:
     ports:
       - "8081:8081"
     environment:
-      APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST}
+      APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST:-localhost}
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/pedidos360_clientes?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
@@ -53,7 +53,7 @@ services:
     ports:
       - "8082:8082"
     environment:
-      APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST}
+      APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST:-localhost}
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/pedidos360_productos?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
@@ -72,7 +72,7 @@ services:
     ports:
       - "8083:8083"
     environment:
-      APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST}
+      APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST:-localhost}
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/pedidos360_pedidos?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
@@ -106,7 +106,7 @@ services:
     ports:
       - "8084:8084"
     environment:
-      APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST}
+      APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST:-localhost}
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/pedidos360_inventario?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
@@ -137,7 +137,7 @@ services:
     ports:
       - "8085:8085"
     environment:
-      APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST}
+      APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST:-localhost}
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/pedidos360_pagos?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
@@ -163,7 +163,7 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      FRONTEND_HOST: ${FRONTEND_HOST}
+      FRONTEND_HOST: ${FRONTEND_HOST:-localhost}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./pedidos360-frontend/dist/pedidos360-frontend/browser:/srv:ro
@@ -179,7 +179,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      BFF_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST}
+      BFF_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST:-localhost}
       AZURE_TENANT_ID: 37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df
       AZURE_CLIENT_ID: f2e886fe-a3b6-46fe-affe-61b4ea743f2a
       CLIENTES_URL: http://ms-clientes:8081
@@ -247,6 +247,20 @@ services:
     networks:
       - pedidos360-net
 
+  # Politica HA de RabbitMQ (replica las colas en los 2 nodos). Servicio de un solo uso: termina solo.
+  rabbitmq-politica:
+    image: curlimages/curl:8.5.0
+    container_name: rabbitmq-politica
+    restart: "no"
+    depends_on:
+      rabbitmq-1:
+        condition: service_healthy
+      rabbitmq-2:
+        condition: service_healthy
+    command: ["-sf", "-u", "admin:admin123", "-X", "PUT", "-H", "content-type: application/json", "-d", "{\"pattern\":\"^(notificaciones|inventario|tickets)\\\\.\",\"definition\":{\"ha-mode\":\"all\",\"ha-sync-mode\":\"automatic\"},\"apply-to\":\"queues\"}", "http://rabbitmq-1:15672/api/policies/%2F/ha-pedidos360"]
+    networks:
+      - pedidos360-net
+
   ms-rabbit-admin:
     build: ./ms-rabbit-admin
     container_name: ms-rabbit-admin
@@ -254,7 +268,7 @@ services:
     ports:
       - "8086:8086"
     environment:
-      APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST}
+      APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST:-localhost}
       AZURE_TENANT_ID: 37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df
       AZURE_CLIENT_ID: f2e886fe-a3b6-46fe-affe-61b4ea743f2a
       RABBITMQ_ADDRESSES: rabbitmq-1:5672,rabbitmq-2:5672
@@ -504,7 +518,7 @@ services:
     ports:
       - "8087:8087"
     environment:
-      APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST}
+      APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST:-localhost}
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/pedidos360_analitica?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
@@ -530,7 +544,7 @@ services:
     ports:
       - "8088:8088"
     environment:
-      APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST}
+      APP_CORS_ORIGINS: http://localhost:4200,https://v40douxdrf.execute-api.us-east-1.amazonaws.com,https://${FRONTEND_HOST:-localhost}
       AZURE_TENANT_ID: 37e13a6f-33ab-44ae-8cf6-c0f8d4cd40df
       AZURE_CLIENT_ID: f2e886fe-a3b6-46fe-affe-61b4ea743f2a
       KAFKA_BOOTSTRAP_SERVERS: kafka-1:29092,kafka-2:29092,kafka-3:29092
