@@ -50,5 +50,5 @@ bash "$DIR/crear-topicos.sh"
 
 echo "== 5. Resultado (PartitionCount / ReplicationFactor)"
 for t in pedidos.eventos inventario.alertas; do
-  kt --describe --topic "$t" | head -1
+  kt --describe --topic "$t" | sed -n 1p
 done

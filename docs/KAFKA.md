@@ -123,7 +123,7 @@ Prueba rápida: `bash kafka/scripts/probar-dlt.sh` publica un mensaje inválido 
 
 | Componente | Puerto | Función |
 |---|---|---|
-| Zookeeper | 2181 (interno) | Coordinación del clúster |
+| Zookeeper (3 nodos: `zookeeper`, `zookeeper-2`, `zookeeper-3`) | 2181 (interno) | Coordinación del clúster; quórum de 2 de 3, tolera la caída de 1 nodo |
 | `kafka-1` | 9092 | Broker 1 (listener externo para el host) |
 | `kafka-2` | 9093 | Broker 2 |
 | `kafka-3` | 9094 | Broker 3 |

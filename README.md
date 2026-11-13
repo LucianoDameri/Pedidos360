@@ -19,7 +19,7 @@ API Gateway en AWS y mensajería asíncrona con RabbitMQ y Kafka.
 | `ms-kafka-admin` | 8088 | Administrador de Kafka (tópicos, consumer groups, mensajes por REST) |
 | MySQL | 3306 | Una base de datos por microservicio |
 | RabbitMQ | 5672 / 15672, 5673 / 15673 | Clúster de 2 nodos (`rabbitmq-1`, `rabbitmq-2`) |
-| Kafka | 9092, 9093, 9094 | 3 brokers (`kafka-1`, `kafka-2`, `kafka-3`) con Zookeeper |
+| Kafka | 9092, 9093, 9094 | 3 brokers (`kafka-1`, `kafka-2`, `kafka-3`) y ensamble de 3 Zookeeper |
 | Kafka UI | 8090 | Tópicos, mensajes, consumer groups y métricas |
 
 Todas las llamadas del frontend pasan por el API Gateway de AWS, que valida el JWT; los microservicios lo validan de nuevo.

@@ -11,7 +11,7 @@ docker-compose ps
 ```
 
 No usar `docker-compose down -v`. Si la EC2 se queda sin memoria al construir, levantar primero Zookeeper y Kafka
-(`docker-compose up -d zookeeper kafka-1 kafka-2 kafka-3 kafka-ui`) y después los servicios nuevos; revisar con `free -m`.
+(`docker-compose up -d zookeeper zookeeper-2 zookeeper-3 kafka-1 kafka-2 kafka-3 kafka-ui`) y después los servicios nuevos; revisar con `free -m`.
 
 Frontend: `cd pedidos360-frontend && npm install && ng build` o `ng serve` según lo acordado en EP2.
 
